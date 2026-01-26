@@ -1,4 +1,20 @@
-auto-reserve/
+# Esqueleto del Proyecto
+
+## Estructura de Carpetas
+- **public/**: Archivos estáticos como imágenes y el index.html.
+- **src/**: Código fuente de la aplicación.
+  - **assets/**: Recursos como imágenes y archivos de datos.
+  - **components/**: Componentes reutilizables de la interfaz de usuario.
+  - **layouts/**: Estructuras de diseño de la aplicación.
+  - **pages/**: Páginas de la aplicación.
+  - **routes/**: Definiciones de rutas de la aplicación.
+  - **styles/**: Archivos de estilos CSS.
+- **package.json**: Dependencias y scripts del proyecto.
+- **vite.config.js**: Configuración de Vite para el proyecto.
+- **README.md**: Documentación del proyecto.
+
+## Descripción
+Este esqueleto proporciona una estructura básica para un proyecto de React utilizando Vite como herramienta de construcción. Incluye carpetas para componentes, páginas, estilos y recursos, facilitando la organización y el mantenimiento del código.
   eslint.config.js
   index.html
   package.json
