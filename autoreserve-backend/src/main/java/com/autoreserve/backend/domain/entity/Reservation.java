@@ -7,7 +7,6 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "reservation")
 public class Reservation {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -33,10 +32,7 @@ public class Reservation {
     @Column(precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    public Reservation() {
-    }
-
-    // Getters & Setters
+    // Getters and Setters
 
     public Long getId() {
         return id;

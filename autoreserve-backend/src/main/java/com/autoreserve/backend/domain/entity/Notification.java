@@ -25,8 +25,8 @@ public class Notification {
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
 
-    @Column(nullable = false)
-    private boolean read = false;
+    @Column(name = "read_flag", nullable = false)
+    private boolean read;
 
     public Notification() {
     }
