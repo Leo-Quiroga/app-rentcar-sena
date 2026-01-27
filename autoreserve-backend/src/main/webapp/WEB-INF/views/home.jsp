@@ -40,6 +40,7 @@
             <h3>Listar Usuarios</h3>
             <p>Ver y administrar usuarios registrados.</p>
         </a>
+
         <a href="${pageContext.request.contextPath}/reservations/new" class="menu-card">
             <span class="badge">Operaciones</span>
             <h3>Crear Reserva</h3>
@@ -50,10 +51,17 @@
             <h3>Listar Reservas</h3>
             <p>Control de alquileres activos y pasados.</p>
         </a>
+
+        <a href="${pageContext.request.contextPath}/cars/new" class="menu-card">
+            <span class="badge">Inventario</span>
+            <h3>Registrar Auto</h3>
+            <p>Añadir nuevos vehículos a la flota.</p>
+        </a>
+
         <a href="${pageContext.request.contextPath}/cars" class="menu-card">
             <span class="badge">Inventario</span>
             <h3>Listar Autos</h3>
-            <p>Administrar la flota de vehículos.</p>
+            <p>Administrar y ver la flota de vehículos.</p>
         </a>
     </div>
 </div>
