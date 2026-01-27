@@ -4,30 +4,27 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "user")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 80)
+    @Column(nullable = false, length = 100)
     private String firstName;
 
-    @Column(nullable = false, length = 80)
+    @Column(length = 100)
     private String lastName;
 
-    @Column(nullable = false, unique = true, length = 120)
+    @Column(nullable = false, unique = true, length = 150)
     private String email;
 
-    @Column(nullable = false)
-    private String password;
+    @Column(nullable = false, length = 255)
+    private String passwordHash;
 
-    @Column(length = 20)
+    @Column(length = 30)
     private String phone;
-
-    @Column(nullable = false)
-    private Boolean enabled = true;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -36,12 +33,11 @@ public class User {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    @PrePersist
-    protected void onCreate() {
+    public User() {
         this.createdAt = LocalDateTime.now();
     }
 
-    // getters & setters
+    // Getters & Setters
 
     public Long getId() {
         return id;
@@ -75,12 +71,12 @@ public class User {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public String getPhone() {
@@ -89,14 +85,6 @@ public class User {
 
     public void setPhone(String phone) {
         this.phone = phone;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -115,3 +103,4 @@ public class User {
         this.role = role;
     }
 }
+

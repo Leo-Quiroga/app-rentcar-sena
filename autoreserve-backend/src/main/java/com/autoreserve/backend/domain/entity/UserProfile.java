@@ -1,18 +1,19 @@
 package com.autoreserve.backend.domain.entity;
 
 import jakarta.persistence.*;
-import java.util.List;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "branch")
-public class Branch {
+@Table(name = "user_profile")
+public class UserProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String name;
+    @OneToOne
+    @JoinColumn(name = "user_id", unique = true, nullable = false)
+    private User user;
 
     @Column(length = 255)
     private String address;
@@ -20,13 +21,12 @@ public class Branch {
     @Column(length = 100)
     private String city;
 
-    @Column(length = 30)
-    private String phone;
+    private LocalDate birthDate;
 
-    @OneToMany(mappedBy = "branch")
-    private List<Car> cars;
+    @Column(length = 100)
+    private String drivingLicense;
 
-    public Branch() {
+    public UserProfile() {
     }
 
     // Getters & Setters
@@ -39,12 +39,12 @@ public class Branch {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public User getUser() {
+        return user;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getAddress() {
@@ -63,19 +63,19 @@ public class Branch {
         this.city = city;
     }
 
-    public String getPhone() {
-        return phone;
+    public LocalDate getBirthDate() {
+        return birthDate;
     }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
     }
 
-    public List<Car> getCars() {
-        return cars;
+    public String getDrivingLicense() {
+        return drivingLicense;
     }
 
-    public void setCars(List<Car> cars) {
-        this.cars = cars;
+    public void setDrivingLicense(String drivingLicense) {
+        this.drivingLicense = drivingLicense;
     }
 }

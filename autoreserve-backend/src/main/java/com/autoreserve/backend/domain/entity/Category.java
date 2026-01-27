@@ -1,31 +1,32 @@
 package com.autoreserve.backend.domain.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "category")
 public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 80)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(length = 200)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
+    @Column(length = 255)
+    private String image;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+    @OneToMany(mappedBy = "category")
+    private List<Car> cars;
+
+    public Category() {
     }
 
-    // getters & setters
+    // Getters & Setters
 
     public Long getId() {
         return id;
@@ -51,11 +52,19 @@ public class Category {
         this.description = description;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public String getImage() {
+        return image;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public List<Car> getCars() {
+        return cars;
+    }
+
+    public void setCars(List<Car> cars) {
+        this.cars = cars;
     }
 }
