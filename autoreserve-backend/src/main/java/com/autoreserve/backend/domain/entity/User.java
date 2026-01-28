@@ -29,12 +29,16 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
     public User() {
         this.createdAt = LocalDateTime.now();
+        this.status = Status.ACTIVE;
     }
 
     // Getters & Setters
@@ -95,6 +99,14 @@ public class User {
         this.createdAt = createdAt;
     }
 
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
     public Role getRole() {
         return role;
     }
@@ -102,5 +114,14 @@ public class User {
     public void setRole(Role role) {
         this.role = role;
     }
-}
 
+    public boolean isActive() {
+        return Status.ACTIVE.equals(this.status);
+    }
+
+    public enum Status {
+        ACTIVE,
+        INACTIVE,
+        SUSPENDED
+    }
+}
