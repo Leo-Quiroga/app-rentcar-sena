@@ -16,21 +16,21 @@ public class UserController {
         this.userService = userService;
     }
 
-    // 👉 Mostrar formulario
+    // Mostrar formulario
     @GetMapping("/new")
     public String showCreateForm(Model model) {
         model.addAttribute("user", new User());
         return "user-form";
     }
 
-    // 👉 Procesar formulario (POST)
+    // Procesar formulario (POST)
     @PostMapping("/save")
     public String saveUser(@ModelAttribute User user) {
         userService.save(user);
         return "redirect:/users/list";
     }
 
-    // 👉 Listar usuarios
+    // Listar usuarios
     @GetMapping("/list")
     public String listUsers(Model model) {
         model.addAttribute("users", userService.findAll());

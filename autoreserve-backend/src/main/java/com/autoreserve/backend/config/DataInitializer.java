@@ -22,22 +22,6 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Insertar roles si no existen (idempotente)
-        if (roleRepository.count() == 0) {
-            if (roleRepository.findByName("CLIENTE").isEmpty()) {
-                Role cliente = new Role();
-                cliente.setId(1L);
-                cliente.setName("CLIENTE");
-                roleRepository.save(cliente);
-            }
-            if (roleRepository.findByName("ADMIN").isEmpty()) {
-                Role admin = new Role();
-                admin.setId(2L);
-                admin.setName("ADMIN");
-                roleRepository.save(admin);
-            }
-            System.out.println(">> Roles CLIENTE y ADMIN creados (si no existían).");
-        }
 
         // Crear branch y category si no existen
         if (categoryRepository.count() == 0 || branchRepository.count() == 0) {

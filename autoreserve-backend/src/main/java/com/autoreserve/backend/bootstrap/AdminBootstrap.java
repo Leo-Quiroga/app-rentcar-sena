@@ -28,13 +28,20 @@ public class AdminBootstrap implements CommandLineRunner {
     @Override
     public void run(String... args) {
         final String adminEmail = "admin@example.com";
+        final String clientEmail = "client@example.com";
 
-        // Si no existe el rol ADMIN, crearlo
+        // Si no existe el rol ADMIN o CLIENT, crearlos
         Role adminRole = roleRepository.findByName("ADMIN")
                 .orElseGet(() -> {
                     Role r = new Role();
-                    r.setId(2L);
                     r.setName("ADMIN");
+                    return roleRepository.save(r);
+                });
+
+        Role clientRole = roleRepository.findByName("CLIENT")
+                .orElseGet(() -> {
+                    Role r = new Role();
+                    r.setName("CLIENT");
                     return roleRepository.save(r);
                 });
 
@@ -48,6 +55,18 @@ public class AdminBootstrap implements CommandLineRunner {
             admin.setRole(adminRole);
             userRepository.save(admin);
             System.out.println(">> Usuario admin creado (si no existía).");
+        }
+
+        if (userRepository.findByEmail(clientEmail).isEmpty()) {
+            User client = new User();
+            client.setFirstName("Cliente");
+            client.setLastName("Prueba");
+            client.setEmail(clientEmail);
+            client.setPasswordHash(passwordEncoder.encode("client123"));
+            client.setPhone("1111111111");
+            client.setRole(clientRole);
+            userRepository.save(client);
+            System.out.println(">> Usuario cliente creado (si no existía).");
         }
     }
 }
