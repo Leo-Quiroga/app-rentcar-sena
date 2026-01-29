@@ -1,12 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { mockUsers } from "../data/mockUsers";
+import { getUsers, deleteUser } from "../api/adminUsersApi";
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState([]);
 
-  const handleDelete = (id) => {
+  useEffect(() => {
+    getUsers().then((data) => {
+      setUsers(data.content); // porque es paginado
+    });
+  }, []);
+
+  const handleDelete = async (id) => {
     if (window.confirm("¿Seguro que deseas eliminar este usuario?")) {
+      await deleteUser(id);
       setUsers((prev) => prev.filter((u) => u.id !== id));
     }
   };

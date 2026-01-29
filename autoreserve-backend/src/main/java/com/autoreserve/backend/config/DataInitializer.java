@@ -8,8 +8,11 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
-import java.util.Optional;
 
+/**
+ * Componente de inicialización de datos maestros del sistema.
+ * Se encarga de poblar la base de datos con registros iniciales de sedes, categorías y vehículos.
+ */
 @Component
 @Order(1)
 @Transactional
@@ -20,10 +23,14 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private CategoryRepository categoryRepository;
     @Autowired private BranchRepository branchRepository;
 
+    /**
+     * Método principal de ejecución de la precarga de datos.
+     * Realiza verificaciones de existencia para asegurar que la operación sea idempotente.
+     */
     @Override
     public void run(String... args) throws Exception {
 
-        // Crear branch y category si no existen
+        // Inicialización de registros de sedes y categorías de prueba en caso de base de datos vacía
         if (categoryRepository.count() == 0 || branchRepository.count() == 0) {
             Branch branch = new Branch();
             branch.setName("Sede Principal");
@@ -35,7 +42,7 @@ public class DataInitializer implements CommandLineRunner {
 
             System.out.println(">> Branch y Category creados (si no existían).");
 
-            // Crear un coche de prueba de forma segura e idempotente
+            // Instanciación de un vehículo inicial vinculado a la sede y categoría creadas
             if (carRepository.count() == 0) {
                 Car car = new Car();
                 car.setBrand("Toyota");

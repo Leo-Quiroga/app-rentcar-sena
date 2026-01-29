@@ -4,35 +4,69 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Entidad que representa la reserva de un vehículo por parte de un usuario.
+ * Es el núcleo del sistema, vinculando clientes, automóviles y periodos de tiempo,
+ * además de gestionar el estado del contrato de alquiler.
+ */
 @Entity
 @Table(name = "reservation")
 public class Reservation {
+
+    /**
+     * Identificador único de la reserva.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Referencia al usuario (cliente) que realiza la reserva.
+     */
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id")
     private User user;
 
+    /**
+     * Referencia al vehículo seleccionado para el alquiler.
+     */
     @ManyToOne(optional = false)
     @JoinColumn(name = "car_id")
     private Car car;
 
+    /**
+     * Fecha de inicio del periodo de alquiler.
+     */
     @Column(nullable = false)
     private LocalDate startDate;
 
+    /**
+     * Fecha de finalización del periodo de alquiler.
+     */
     @Column(nullable = false)
     private LocalDate endDate;
 
+    /**
+     * Estado actual de la reserva (ej. CONFIRMED, CANCELLED, COMPLETED).
+     * Se persiste como una cadena de texto para facilitar la legibilidad en BD.
+     */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ReservationStatus status;
 
+    /**
+     * Costo total calculado de la reserva basado en los días y la tarifa del auto.
+     */
     @Column(precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    // Getters and Setters
+    /**
+     * Constructor por defecto para JPA.
+     */
+    public Reservation() {
+    }
+
+    /* ================= GETTERS & SETTERS ================= */
 
     public Long getId() {
         return id;

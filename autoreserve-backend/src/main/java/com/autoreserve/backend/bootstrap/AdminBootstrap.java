@@ -9,6 +9,10 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+/**
+ * Componente de inicialización de datos de usuario y roles.
+ * Se ejecuta al iniciar la aplicación para garantizar la existencia de usuarios base.
+ */
 @Component
 @Order(2)
 public class AdminBootstrap implements CommandLineRunner {
@@ -17,6 +21,9 @@ public class AdminBootstrap implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Inyección de dependencias mediante constructor para repositorios y codificador de contraseñas.
+     */
     public AdminBootstrap(UserRepository userRepository,
                           RoleRepository roleRepository,
                           PasswordEncoder passwordEncoder) {
@@ -25,12 +32,16 @@ public class AdminBootstrap implements CommandLineRunner {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Método de ejecución de lógica de bootstrap.
+     * Verifica la existencia de roles y usuarios iniciales, creándolos en caso de ausencia.
+     */
     @Override
     public void run(String... args) {
         final String adminEmail = "admin@example.com";
         final String clientEmail = "client@example.com";
 
-        // Si no existe el rol ADMIN o CLIENT, crearlos
+        // Verificación y creación de rol ADMINISTRADOR
         Role adminRole = roleRepository.findByName("ADMIN")
                 .orElseGet(() -> {
                     Role r = new Role();
@@ -38,6 +49,7 @@ public class AdminBootstrap implements CommandLineRunner {
                     return roleRepository.save(r);
                 });
 
+        // Verificación y creación de rol CLIENTE
         Role clientRole = roleRepository.findByName("CLIENT")
                 .orElseGet(() -> {
                     Role r = new Role();
@@ -45,6 +57,7 @@ public class AdminBootstrap implements CommandLineRunner {
                     return roleRepository.save(r);
                 });
 
+        // Verificación y creación de usuario con privilegios de administrador
         if (userRepository.findByEmail(adminEmail).isEmpty()) {
             User admin = new User();
             admin.setFirstName("Administrador");
@@ -57,6 +70,7 @@ public class AdminBootstrap implements CommandLineRunner {
             System.out.println(">> Usuario admin creado (si no existía).");
         }
 
+        // Verificación y creación de usuario con privilegios de cliente
         if (userRepository.findByEmail(clientEmail).isEmpty()) {
             User client = new User();
             client.setFirstName("Cliente");

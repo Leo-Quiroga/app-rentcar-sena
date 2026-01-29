@@ -7,6 +7,10 @@ import org.springframework.stereotype.Service;
 import java.security.Key;
 import java.util.Date;
 
+/**
+ * Servicio encargado de la gestión de tokens JWT.
+ * Realiza la generación, firmado y extracción de información de los tokens de acceso.
+ */
 @Service
 public class JwtService {
 
@@ -15,6 +19,9 @@ public class JwtService {
 
     private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
+    /**
+     * Genera un nuevo token JWT para un usuario autenticado.
+     */
     public String generateToken(String email, String role) {
         return Jwts.builder()
                 .setSubject(email)
@@ -25,6 +32,9 @@ public class JwtService {
                 .compact();
     }
 
+    /**
+     * Analiza el token y extrae todos sus claims (peticiones de datos).
+     */
     public Claims extractClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -33,6 +43,9 @@ public class JwtService {
                 .getBody();
     }
 
+    /**
+     * Extrae específicamente el correo electrónico (subject) contenido en el token.
+     */
     public String extractEmail(String token) {
         return extractClaims(token).getSubject();
     }

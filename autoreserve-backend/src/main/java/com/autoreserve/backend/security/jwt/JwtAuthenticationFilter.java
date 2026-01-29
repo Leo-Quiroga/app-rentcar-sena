@@ -16,6 +16,10 @@ import org.springframework.security.web.context.SecurityContextRepository;
 
 import java.io.IOException;
 
+/**
+ * Filtro de seguridad que intercepta cada petición HTTP para validar el token JWT.
+ * Si el token es válido, establece la identidad del usuario en el contexto de seguridad de Spring.
+ */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
@@ -31,6 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws IOException, jakarta.servlet.ServletException {
 
+        // Extrae el encabezado de autorización
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -38,6 +43,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 String email = jwtService.extractEmail(token);
 
+                // Verifica si el token es válido y si el usuario no está ya autenticado en el hilo actual
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     User user = userRepository.findByEmail(email).orElse(null);
 
@@ -46,19 +52,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         UsernamePasswordAuthenticationToken authentication =
                                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
 
+                        // Crea y establece el nuevo contexto de seguridad con el Principal autenticado
                         SecurityContext context = SecurityContextHolder.createEmptyContext();
                         context.setAuthentication(authentication);
                         SecurityContextHolder.setContext(context);
 
-                        // Persistimos el contexto para que sea visible en los filtros de autorización (PreAuthorize)
+                        // Persiste el contexto para asegurar que esté disponible durante todo el ciclo de la petición
                         securityContextRepository.saveContext(context, request, response);
                         System.out.println("--- DEBUG: Usuario autenticado: " + email + " con roles: " + principal.getAuthorities());
                     }
                 }
             } catch (JwtException e) {
+                // Captura errores de firma, expiración o formato del token
                 System.out.println("--- DEBUG: JWT inválido: " + e.getMessage());
             }
         }
+        // Continúa con la cadena de filtros de seguridad
         filterChain.doFilter(request, response);
     }
 }

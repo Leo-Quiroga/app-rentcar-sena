@@ -4,48 +4,86 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Entidad que representa un vehículo dentro del sistema de inventario.
+ * Mapea la tabla "car" y gestiona las especificaciones técnicas, costos y disponibilidad.
+ */
 @Entity
 @Table(name = "car")
 public class Car {
 
+    /**
+     * Identificador único del vehículo.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Marca del fabricante del vehículo.
+     */
     @Column(nullable = false, length = 100)
     private String brand;
 
+    /**
+     * Modelo específico del vehículo.
+     */
     @Column(nullable = false, length = 100)
     private String model;
 
+    /**
+     * Año de fabricación del vehículo.
+     */
     @Column
     private Integer year;
 
+    /**
+     * Placa o número de matrícula única del vehículo.
+     */
     @Column(unique = true, length = 20)
     private String plate;
 
+    /**
+     * Tarifa de alquiler diaria. Se define con precisión de 10 dígitos y 2 decimales.
+     */
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerDay;
 
+    /**
+     * Estado operativo actual del vehículo (Disponible, Mantenimiento, etc.).
+     * Se almacena como un valor de cadena en la base de datos.
+     */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CarStatus status;
 
+    /**
+     * Clasificación del vehículo según su tipo o segmento.
+     */
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
+    /**
+     * Sede física a la que pertenece o donde se encuentra estacionado el vehículo.
+     */
     @ManyToOne
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
+    /**
+     * Listado histórico y futuro de reservas asociadas a este vehículo.
+     */
     @OneToMany(mappedBy = "car")
     private List<Reservation> reservations;
 
+    /**
+     * Constructor por defecto requerido por el motor de persistencia JPA.
+     */
     public Car() {
     }
 
-    // Getters & Setters
+    // Métodos de acceso (Getters y Setters)
 
     public Long getId() {
         return id;

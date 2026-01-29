@@ -3,33 +3,59 @@ package com.autoreserve.backend.domain.entity;
 import jakarta.persistence.*;
 import java.util.List;
 
+/**
+ * Entidad que representa una sede o sucursal de la empresa de alquiler.
+ * Mapea la tabla "branch" en la base de datos y gestiona la ubicación de los vehículos.
+ */
 @Entity
 @Table(name = "branch")
 public class Branch {
 
+    /**
+     * Identificador único de la sede. Generado automáticamente mediante estrategia de identidad.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Nombre descriptivo de la sede. Campo obligatorio.
+     */
     @Column(nullable = false, length = 100)
     private String name;
 
+    /**
+     * Dirección física de las instalaciones de la sede.
+     */
     @Column(length = 255)
     private String address;
 
+    /**
+     * Ciudad donde se encuentra ubicada la sucursal.
+     */
     @Column(length = 100)
     private String city;
 
+    /**
+     * Número telefónico de contacto de la sede.
+     */
     @Column(length = 30)
     private String phone;
 
+    /**
+     * Relación uno a muchos con la entidad Car.
+     * Representa el inventario de vehículos asociados a esta sede específica.
+     */
     @OneToMany(mappedBy = "branch")
     private List<Car> cars;
 
+    /**
+     * Constructor por defecto requerido por JPA.
+     */
     public Branch() {
     }
 
-    // Getters & Setters
+    // Métodos de acceso (Getters y Setters)
 
     public Long getId() {
         return id;

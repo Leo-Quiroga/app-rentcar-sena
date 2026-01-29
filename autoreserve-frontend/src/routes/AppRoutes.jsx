@@ -1,6 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 
+import ProtectedRoute from "./ProtectedRoute";
+import AdminRoute from "./AdminRoute";
+
 // Páginas principales
 import Home from "../pages/Home";
 import Categories from "../pages/Categories";
@@ -119,73 +122,91 @@ export default function AppRoutes() {
       <Route
         path="/perfil"
         element={
-          <MainLayout>
-            <Profile />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Profile />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/favoritos"
         element={
-          <MainLayout>
-            <Favorites />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Favorites />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/reservas"
         element={
-          <MainLayout>
-            <Reservations />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Reservations />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/reservas/:id"
         element={
-          <MainLayout>
-            <ReservationDetail />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <ReservationDetail />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/reservas/checkout"
         element={
-          <MainLayout>
-            <Checkout />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Checkout />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/reservas/confirmacion"
         element={
-          <MainLayout>
-            <ReservationConfirmation />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <ReservationConfirmation />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/reservas/pago-fallido"
         element={
-          <MainLayout>
-            <PaymentFailed />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <PaymentFailed />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/factura/:id"
         element={
-          <MainLayout>
-            <Invoice />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Invoice />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/perfil/cambiar-password"
         element={
-          <MainLayout>
-            <ChangePassword />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <ChangePassword />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -193,17 +214,21 @@ export default function AppRoutes() {
       <Route
         path="/admin"
         element={
+          <AdminRoute>
           <MainLayout>
             <AdminDashboard />
           </MainLayout>
+          </AdminRoute>
         }
       />
       <Route
         path="/admin/autos"
         element={
+          <AdminRoute>
           <MainLayout>
             <AdminAutos />
           </MainLayout>
+          </AdminRoute>
         }
       />
       <Route
@@ -225,9 +250,11 @@ export default function AppRoutes() {
       <Route
         path="/admin/categorias"
         element={
+          <AdminRoute>
           <MainLayout>
             <AdminCategories />
           </MainLayout>
+          </AdminRoute>
         }
       />
       <Route
@@ -241,9 +268,11 @@ export default function AppRoutes() {
       <Route
         path="/admin/usuarios"
         element={
+          <AdminRoute>
           <MainLayout>
             <AdminUsers />
           </MainLayout>
+          </AdminRoute>
         }
       />
       <Route
@@ -257,9 +286,11 @@ export default function AppRoutes() {
       <Route
         path="/admin/sedes"
         element={
+          <AdminRoute>
           <MainLayout>
             <AdminSedes />
           </MainLayout>
+          </AdminRoute>
         }
       />
       <Route

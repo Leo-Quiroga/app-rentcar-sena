@@ -7,8 +7,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
+/**
+ * Adaptador que envuelve la entidad User para ser utilizada por Spring Security.
+ * Implementa UserDetails para gestionar la identidad y permisos del usuario.
+ */
 public class UserPrincipal implements UserDetails {
 
     private final User user;
@@ -17,9 +20,12 @@ public class UserPrincipal implements UserDetails {
         this.user = user;
     }
 
+    /**
+     * Mapea el rol de la base de datos al formato de autoridad de Spring Security.
+     * Se añade el prefijo "ROLE_" para compatibilidad con hasRole().
+     */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // IMPORTANTE: Spring Security requiere el prefijo ROLE_ para hasRole
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName()));
     }
 
@@ -32,6 +38,8 @@ public class UserPrincipal implements UserDetails {
     public String getUsername() {
         return user.getEmail();
     }
+
+    /* ================= ESTADOS DE LA CUENTA ================= */
 
     @Override public boolean isAccountNonExpired() { return true; }
     @Override public boolean isAccountNonLocked() { return true; }

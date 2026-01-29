@@ -3,45 +3,81 @@ package com.autoreserve.backend.domain.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa a los usuarios del sistema.
+ * Almacena la información de perfil, credenciales de acceso y la relación
+ * con el sistema de permisos a través de roles.
+ */
 @Entity
 @Table(name = "user")
 public class User {
 
+    /**
+     * Identificador único del usuario.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Nombre(s) del usuario.
+     */
     @Column(nullable = false, length = 100)
     private String firstName;
 
+    /**
+     * Apellido(s) del usuario.
+     */
     @Column(length = 100)
     private String lastName;
 
+    /**
+     * Correo electrónico único, utilizado como principal identificador de acceso (username).
+     */
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
+    /**
+     * Contraseña almacenada en formato Hash (BCrypt) para garantizar la seguridad.
+     */
     @Column(nullable = false, length = 255)
     private String passwordHash;
 
+    /**
+     * Número telefónico de contacto del usuario.
+     */
     @Column(length = 30)
     private String phone;
 
+    /**
+     * Fecha y hora de registro del usuario en la plataforma.
+     */
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    /**
+     * Estado operativo del usuario dentro del sistema.
+     */
     @Enumerated(EnumType.STRING)
     private Status status;
 
+    /**
+     * Rol asignado que define las autoridades y permisos del usuario.
+     */
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
+    /**
+     * Constructor por defecto. Inicializa automáticamente la fecha de creación
+     * y establece el estado inicial como activo.
+     */
     public User() {
         this.createdAt = LocalDateTime.now();
         this.status = Status.ACTIVE;
     }
 
-    // Getters & Setters
+    /* ================= GETTERS & SETTERS ================= */
 
     public Long getId() {
         return id;
@@ -115,13 +151,23 @@ public class User {
         this.role = role;
     }
 
+    /**
+     * Método de conveniencia para verificar si el usuario tiene permiso de acceso.
+     * @return true si el estado es ACTIVE.
+     */
     public boolean isActive() {
         return Status.ACTIVE.equals(this.status);
     }
 
+    /**
+     * Enum que define los posibles estados de cuenta de un usuario.
+     */
     public enum Status {
+        /** El usuario puede operar normalmente. */
         ACTIVE,
+        /** El usuario ha sido desactivado (ej. baja voluntaria). */
         INACTIVE,
+        /** El acceso ha sido restringido por administración. */
         SUSPENDED
     }
 }

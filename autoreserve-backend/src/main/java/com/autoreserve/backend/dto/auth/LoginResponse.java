@@ -1,5 +1,9 @@
 package com.autoreserve.backend.dto.auth;
 
+/**
+ * Respuesta enviada tras una autenticación exitosa.
+ * Contiene los datos de identidad y el token de acceso para el cliente.
+ */
 public class LoginResponse {
 
     private Long userId;
@@ -10,12 +14,17 @@ public class LoginResponse {
     public LoginResponse() {
     }
 
+    /**
+     * Constructor para inicializar la respuesta completa de autenticación.
+     */
     public LoginResponse(Long userId, String email, String role, String token) {
         this.userId = userId;
         this.email = email;
         this.role = role;
         this.token = token;
     }
+
+    /* ================= GETTERS & SETTERS ================= */
 
     public Long getUserId() {
         return userId;
