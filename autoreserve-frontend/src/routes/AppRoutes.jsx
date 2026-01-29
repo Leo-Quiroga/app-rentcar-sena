@@ -215,9 +215,9 @@ export default function AppRoutes() {
         path="/admin"
         element={
           <AdminRoute>
-          <MainLayout>
-            <AdminDashboard />
-          </MainLayout>
+            <MainLayout>
+              <AdminDashboard />
+            </MainLayout>
           </AdminRoute>
         }
       />
@@ -225,9 +225,9 @@ export default function AppRoutes() {
         path="/admin/autos"
         element={
           <AdminRoute>
-          <MainLayout>
-            <AdminAutos />
-          </MainLayout>
+            <MainLayout>
+              <AdminAutos />
+            </MainLayout>
           </AdminRoute>
         }
       />
@@ -251,9 +251,9 @@ export default function AppRoutes() {
         path="/admin/categorias"
         element={
           <AdminRoute>
-          <MainLayout>
-            <AdminCategories />
-          </MainLayout>
+            <MainLayout>
+              <AdminCategories />
+            </MainLayout>
           </AdminRoute>
         }
       />
@@ -269,9 +269,9 @@ export default function AppRoutes() {
         path="/admin/usuarios"
         element={
           <AdminRoute>
-          <MainLayout>
-            <AdminUsers />
-          </MainLayout>
+            <MainLayout>
+              <AdminUsers />
+            </MainLayout>
           </AdminRoute>
         }
       />
@@ -284,12 +284,20 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/admin/usuarios/:id/editar"
+        element={
+          <MainLayout>
+            <AdminUserForm />
+          </MainLayout>
+        }
+      />
+      <Route
         path="/admin/sedes"
         element={
           <AdminRoute>
-          <MainLayout>
-            <AdminSedes />
-          </MainLayout>
+            <MainLayout>
+              <AdminSedes />
+            </MainLayout>
           </AdminRoute>
         }
       />

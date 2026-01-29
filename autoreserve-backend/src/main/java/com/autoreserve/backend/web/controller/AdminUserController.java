@@ -51,7 +51,6 @@ public class AdminUserController {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().build();
         }
-
         Role clientRole = roleRepository.findByName("CLIENT")
                 .orElseThrow(() -> new RuntimeException("CLIENT role not found"));
 
@@ -65,14 +64,18 @@ public class AdminUserController {
 
         User saved = userRepository.save(user);
 
-        return ResponseEntity.ok(
-                new UserResponse(saved.getId(), saved.getEmail(), saved.getRole().getName())
-        );
+        // ACTUALIZADO: Pasamos todos los campos al constructor
+        return ResponseEntity.ok(new UserResponse(
+                saved.getId(),
+                saved.getFirstName(),
+                saved.getLastName(),
+                saved.getEmail(),
+                saved.getPhone(),
+                saved.getRole().getName(),
+                saved.getCreatedAt()
+        ));
     }
 
-    /**
-     * Actualiza la información de un usuario existente.
-     */
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
@@ -92,9 +95,15 @@ public class AdminUserController {
 
         User updated = userRepository.save(user);
 
-        return ResponseEntity.ok(
-                new UserResponse(updated.getId(), updated.getEmail(), updated.getRole().getName())
-        );
+        return ResponseEntity.ok(new UserResponse(
+                updated.getId(),
+                updated.getFirstName(),
+                updated.getLastName(),
+                updated.getEmail(),
+                updated.getPhone(),
+                updated.getRole().getName(),
+                updated.getCreatedAt()
+        ));
     }
 
     /**
@@ -105,31 +114,32 @@ public class AdminUserController {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Protección de seguridad básica
         if ("ADMIN".equals(user.getRole().getName())) {
             return ResponseEntity.badRequest()
-                    .body("No se puede eliminar un usuario ADMIN");
+                    .body("No se puede eliminar un usuario con rol ADMINISTRADOR.");
         }
 
         userRepository.delete(user);
         return ResponseEntity.ok("Usuario eliminado correctamente");
     }
 
-    /**
-     * Obtiene los detalles de un usuario específico por su ID.
-     */
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return ResponseEntity.ok(
-                new UserResponse(user.getId(), user.getEmail(), user.getRole().getName())
-        );
+        return ResponseEntity.ok(new UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole().getName(),
+                user.getCreatedAt()
+        ));
     }
 
-    /**
-     * Lista todos los usuarios registrados con soporte para paginación.
-     */
     @GetMapping
     public ResponseEntity<PagedUserResponse> listUsers(
             @RequestParam(defaultValue = "0") int page,
@@ -139,7 +149,15 @@ public class AdminUserController {
 
         List<UserResponse> users = userPage.getContent()
                 .stream()
-                .map(user -> new UserResponse(user.getId(), user.getEmail(), user.getRole().getName()))
+                .map(user -> new UserResponse(
+                        user.getId(),
+                        user.getFirstName(),
+                        user.getLastName(),
+                        user.getEmail(),
+                        user.getPhone(),
+                        user.getRole().getName(),
+                        user.getCreatedAt()
+                ))
                 .toList();
 
         PagedUserResponse response = new PagedUserResponse(

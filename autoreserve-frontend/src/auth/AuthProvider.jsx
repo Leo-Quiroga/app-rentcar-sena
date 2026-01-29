@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
 import { loginRequest } from "./authApi";
 
+// Proveedor de contexto de autenticación
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,7 +15,8 @@ export function AuthProvider({ children }) {
     }
     setLoading(false);
   }, []);
-
+  
+  // Función para iniciar sesión
   const login = async (email, password) => {
     const data = await loginRequest(email, password);
 
@@ -30,6 +32,7 @@ export function AuthProvider({ children }) {
     return authUser;
   };
 
+  // Función para cerrar sesión
   const logout = () => {
     localStorage.removeItem("auth");
     setUser(null);
