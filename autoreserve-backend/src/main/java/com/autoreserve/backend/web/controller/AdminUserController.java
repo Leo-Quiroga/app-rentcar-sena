@@ -42,17 +42,18 @@ public class AdminUserController {
     }
 
     /**
-     * Crea un nuevo usuario con el rol predeterminado CLIENT.
+     * Crea un nuevo usuario.
      */
     @PostMapping
     public ResponseEntity<UserResponse> createClient(
             @Valid @RequestBody CreateUserRequest request
     ) {
+
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().build();
         }
-        Role clientRole = roleRepository.findByName("CLIENT")
-                .orElseThrow(() -> new RuntimeException("CLIENT role not found"));
+        Role clientRole = roleRepository.findByName(request.getRole().toUpperCase())
+                .orElseThrow(() -> new RuntimeException("Role not found"));
 
         User user = new User();
         user.setFirstName(request.getFirstName());
@@ -75,7 +76,8 @@ public class AdminUserController {
                 saved.getCreatedAt()
         ));
     }
-
+    // Actualiza los datos de un usuario existente.
+    // Permite modificar información de perfil y, de forma opcional, la credencial de acceso.
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
@@ -88,6 +90,13 @@ public class AdminUserController {
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
+
+        if (request.getRole() != null) {
+            Role role = roleRepository.findByName(request.getRole().toUpperCase())
+                    .orElseThrow(() -> new RuntimeException("Role not found"));
+            user.setRole(role);
+        }
+
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -123,7 +132,7 @@ public class AdminUserController {
         userRepository.delete(user);
         return ResponseEntity.ok("Usuario eliminado correctamente");
     }
-
+    // Recupera los detalles de un usuario específico por su ID.
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         User user = userRepository.findById(id)
@@ -139,7 +148,7 @@ public class AdminUserController {
                 user.getCreatedAt()
         ));
     }
-
+    // Lista todos los usuarios con paginación.
     @GetMapping
     public ResponseEntity<PagedUserResponse> listUsers(
             @RequestParam(defaultValue = "0") int page,

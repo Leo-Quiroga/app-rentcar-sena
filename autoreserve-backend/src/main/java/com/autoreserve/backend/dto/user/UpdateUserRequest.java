@@ -21,6 +21,9 @@ public class UpdateUserRequest {
 
     private String phone;
 
+    @NotBlank
+    private String role;
+
     /**
      * Campo opcional: solo se procesa si el usuario desea cambiar su contraseña.
      */
@@ -42,4 +45,7 @@ public class UpdateUserRequest {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }

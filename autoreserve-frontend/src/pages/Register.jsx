@@ -1,6 +1,6 @@
 // Página de registro de nuevos usuarios
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Register() {
   // Estado para capturar los datos del formulario
@@ -12,6 +12,8 @@ export default function Register() {
     confirmPassword: "",
     phone: "",
   });
+  // Hook de navegación
+  const navigate = useNavigate();
   // Estado para manejar errores
   const [error, setError] = useState("");
   // Manejo de cambios en los campos del formulario
@@ -47,12 +49,26 @@ export default function Register() {
       // 4. Manejar respuesta del backend
       if (response.ok) {
         alert("Registro exitoso");
-        // Aquí podrías redirigir al login
+        // lImpiar el formulario y redirigir al login
+        if (response.ok) {
+          // 1. Limpiar formulario
+          setFormData({
+            firstName: "",
+            lastName: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+            phone: "",
+          });
+
+          // 2. Redirigir al login
+          navigate("/login");
+        }
       } else {
         setError("Error en el registro. Intenta de nuevo.");
       }
     } catch (err) {
-          setError("Error en el registro. Intenta de nuevo. " + err.message);
+      setError("Error en el registro. Intenta de nuevo. " + err.message);
     }
   };
   // Renderizado del formulario de registro
@@ -63,48 +79,132 @@ export default function Register() {
           Crear cuenta
         </h1>
 
-        {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
+        {error && (
+          <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+        )}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           {/* Nombre y Apellido en una fila */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">Nombres</label>
-              <input type="text" id="firstName" value={formData.firstName} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2" required />
+              <label
+                htmlFor="firstName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Nombres
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                required
+              />
             </div>
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
-              <input type="text" id="lastName" value={formData.lastName} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2" required />
+              <label
+                htmlFor="lastName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Apellidos
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                required
+              />
             </div>
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
-            <input type="email" id="email" value={formData.email} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="tu@email.com" required />
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Correo electrónico
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              placeholder="tu@email.com"
+              required
+            />
           </div>
 
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-            <input type="text" id="phone" value={formData.phone} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="321651516" required />
+            <label
+              htmlFor="phone"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Teléfono
+            </label>
+            <input
+              type="text"
+              id="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              placeholder="321651516"
+              required
+            />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-            <input type="password" id="password" value={formData.password} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="********" required />
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Contraseña
+            </label>
+            <input
+              type="password"
+              id="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              placeholder="********"
+              required
+            />
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
-            <input type="password" id="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="********" required />
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Confirmar contraseña
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              placeholder="********"
+              required
+            />
           </div>
 
-          <button type="submit" className="w-full py-2 px-4 bg-primary text-white rounded-lg hover:bg-primary-dark transition">
+          <button
+            type="submit"
+            className="w-full py-2 px-4 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+          >
             Registrarse
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          ¿Ya tienes cuenta? <Link to="/login" className="hover:underline text-primary">Inicia sesión</Link>
+          ¿Ya tienes cuenta?{" "}
+          <Link to="/login" className="hover:underline text-primary">
+            Inicia sesión
+          </Link>
         </div>
       </div>
     </div>

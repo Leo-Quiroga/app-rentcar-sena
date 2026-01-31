@@ -25,6 +25,10 @@ public class CreateUserRequest {
     @NotBlank
     private String phone;
 
+    @NotBlank
+    private String role;
+
+
     /* ================= GETTERS & SETTERS ================= */
 
     public String getFirstName() {
@@ -65,5 +69,12 @@ public class CreateUserRequest {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getRole() {
+        return role;
+    }
+    public void setRole(String role) {
+        this.role = role;
     }
 }

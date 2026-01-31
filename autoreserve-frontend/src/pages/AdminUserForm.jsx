@@ -14,8 +14,8 @@ export default function AdminUserForm() {
     email: "",
     phone: "",
     password: "",
-    confirmPassword: "", // <-- Nuevo campo
-    role: "cliente",
+    confirmPassword: "", 
+    role: "CLIENT",
   });
   // Cargar datos del usuario si estamos editando
   useEffect(() => {
