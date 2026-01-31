@@ -1,3 +1,4 @@
+// Pantalla de formulario para que el administrador cree o edite una categoría
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { mockCategories } from "../data/mockCategories";
@@ -9,7 +10,7 @@ export default function AdminCategoryForm() {
   // Si hay id, es edición; si no, es creación
   const isEditing = Boolean(id);
   const [category, setCategory] = useState({ name: "", image: "" });
-
+  // Cargar datos de la categoría si estamos editando
   useEffect(() => {
     if (isEditing) {
       const found = mockCategories.find((c) => String(c.id) === String(id));
@@ -18,12 +19,12 @@ export default function AdminCategoryForm() {
       }
     }
   }, [id, isEditing]);
-
+  // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCategory((prev) => ({ ...prev, [name]: value }));
   };
-
+  // Manejar envío del formulario
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!category.name.trim()) {
@@ -46,7 +47,7 @@ export default function AdminCategoryForm() {
 
     navigate("/admin/categorias");
   };
-
+  // Renderizar formulario
   return (
     <div className="max-w-lg mx-auto bg-white shadow rounded-lg p-6 mt-10">
       <h1 className="text-2xl font-bold mb-6 text-neutral-dark">

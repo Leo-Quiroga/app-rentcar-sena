@@ -1,4 +1,4 @@
-// src/pages/CategoryDetail.jsx
+// Página de detalle de categoría de vehículos
 import { useParams, Link } from "react-router-dom";
 import { categories, cars } from "../data/mockData";
 import CarCard from "../components/CarCard";
@@ -6,7 +6,7 @@ import CarCard from "../components/CarCard";
 export default function CategoryDetail() {
   const { id } = useParams();
   const category = categories.find((c) => String(c.id) === String(id));
-
+  // Si no se encuentra la categoría, mostrar mensaje de error
   if (!category) {
     return (
       <div className="text-center py-12">
@@ -21,9 +21,9 @@ export default function CategoryDetail() {
       </div>
     );
   }
-
+  // Filtrar autos que pertenecen a esta categoría
   const categoryCars = cars.filter((car) => car.category === category.name);
-
+  // Renderizar detalle de categoría con lista de autos
   return (
     <div className="space-y-6">
       <header className="flex items-center gap-4">

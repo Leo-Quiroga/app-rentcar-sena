@@ -1,4 +1,4 @@
-
+// Componente para mostrar el modal de reserva confirmada
 // src/components/ModalReservaConfirmada.jsx
 import { useNavigate } from "react-router-dom";
 

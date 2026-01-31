@@ -1,10 +1,11 @@
+// Página de factura para una reserva específica
 import { useParams, Link } from "react-router-dom";
 import { mockReservations } from "../data/mockReservations";
 
 export default function Invoice() {
   const { id } = useParams();
   const reserva = mockReservations.find((r) => String(r.id) === String(id));
-
+  // Si no se encuentra la reserva, mostrar mensaje de error
   if (!reserva) {
     return (
       <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center">
@@ -21,7 +22,7 @@ export default function Invoice() {
       </div>
     );
   }
-
+  // Renderizar factura de la reserva
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8 bg-white shadow rounded-lg">
       {/* Encabezado */}

@@ -1,3 +1,4 @@
+//Pantalla para cambiar la contraseña de usuario
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -7,7 +8,7 @@ export default function ChangePassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-
+  // Manejar envío del formulario
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
@@ -22,10 +23,10 @@ export default function ChangePassword() {
       return;
     }
 
-    // 🔗 Aquí luego se conectará a la API para cambiar la contraseña
+    // Aquí luego se conectará a la API para cambiar la contraseña
     setSuccess(true);
   };
-
+  // Renderizar formulario de cambio de contraseña
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-light px-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">

@@ -1,22 +1,23 @@
-
+// Pantalla de inicio de sesión
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { AuthProvider } from "../auth/AuthProvider";
 
 export default function Login() {
+  // Obtener función de login del contexto de autenticación
   const { login } = useAuth();
   const navigate = useNavigate();
-
+  // Estados para el formulario
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   
-  
+  // Manejar envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-
+    // Intentar iniciar sesión
     try {
       const userData = await login(email, password);
       const roleUser = userData.role;
@@ -31,7 +32,7 @@ export default function Login() {
       setError(err.message || "Credenciales inválidas");
     }
   };
-
+  /// Renderizar formulario de inicio de sesión
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-light px-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">

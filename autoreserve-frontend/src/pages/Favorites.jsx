@@ -1,4 +1,4 @@
-// src/pages/Favorites.jsx
+// Pantalla de favoritos del usuario
 import { useState } from "react";
 import SearchBar from "../components/SearchBar";
 import CarCard from "../components/CarCard";
@@ -7,10 +7,10 @@ import ModalCarDetail from "../components/ModalCarDetail";
 import ModalConfirmarReserva from "../components/ModalConfirmarReserva";
 import ModalReservaConfirmada from "../components/ModalReservaConfirmada";
 
-// 🔹 Simulación de favoritos (luego se integrará con la lógica real)
+// Simulación de favoritos (luego se integrará con la lógica real)
 import { cars } from "../data/mockData";
 const mockFavorites = cars.slice(0, 3); // solo para probar, 3 autos favoritos
-
+// Componente principal de la página de favoritos
 export default function Favorites() {
   const [filters, setFilters] = useState(null);
 

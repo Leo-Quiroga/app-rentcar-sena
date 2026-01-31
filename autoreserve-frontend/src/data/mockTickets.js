@@ -1,3 +1,4 @@
+// Mock temporal de tickets de soporte
 export const mockTickets = [
   {
     id: "TCK-001",

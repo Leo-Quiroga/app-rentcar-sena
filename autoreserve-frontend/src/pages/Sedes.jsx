@@ -1,3 +1,4 @@
+// Página de sedes
 import { mockSedes } from "../data/mockSedes";
 
 export default function Sedes() {

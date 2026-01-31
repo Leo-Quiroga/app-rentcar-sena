@@ -1,3 +1,4 @@
+// Formulario para crear o editar una sede
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { mockSedes } from "../data/mockSedes";
@@ -6,7 +7,7 @@ export default function AdminSedeForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-
+ // Estado del formulario
   const [form, setForm] = useState({
     nombre: "",
     direccion: "",
@@ -28,11 +29,11 @@ export default function AdminSedeForm() {
       }
     }
   }, [id, isEdit]);
-
+  // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
-
+  // Manejar envío del formulario
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -47,7 +48,7 @@ export default function AdminSedeForm() {
 
     navigate("/admin/sedes");
   };
-
+  // Renderizar formulario
   return (
     <div className="max-w-2xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <h1 className="text-2xl font-bold mb-6">

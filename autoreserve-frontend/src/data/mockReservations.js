@@ -1,4 +1,4 @@
-// src/data/mockReservations.js
+//Mock temporal de reservas de autos
 export const mockReservations = [
   {
     id: "1",

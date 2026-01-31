@@ -1,4 +1,4 @@
-
+// Componente Header con menú de navegación y autenticación
 // src/components/Header.jsx
 import { useState } from "react";
 import { Link } from "react-router-dom";

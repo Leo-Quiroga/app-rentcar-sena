@@ -1,10 +1,12 @@
+// Pantalla de administración de autos para el administrador
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { mockAdminAutos } from "../data/mockAdminAutos";
 
 export default function AdminAutos() {
+  // Estado de la lista de autos (mock temporal)
   const [autos] = useState(mockAdminAutos);
-
+  // Renderizar tabla de autos con acciones
   return (
     <div className="min-h-screen bg-neutral-light px-4 py-10 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">

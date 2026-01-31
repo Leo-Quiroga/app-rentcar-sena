@@ -1,3 +1,4 @@
+// Pantalla de formulario para que el administrador cree o edite un auto
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { mockAdminAutos } from "../data/mockAdminAutos";
@@ -8,7 +9,7 @@ export default function AdminAutoForm() {
 
   // Si hay id, estamos editando
   const existingAuto = mockAdminAutos.find((a) => a.id === id);
-
+  // Estado del formulario
   const [formData, setFormData] = useState(
     existingAuto || {
       brand: "",
@@ -19,12 +20,12 @@ export default function AdminAutoForm() {
       status: "Disponible",
     }
   );
-
+  // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
+  // Manejar envío del formulario
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -40,7 +41,7 @@ export default function AdminAutoForm() {
 
     navigate("/admin/autos");
   };
-
+  // Renderizar formulario
   return (
     <div className="max-w-3xl mx-auto bg-white shadow rounded-lg p-6 mt-10">
       <h1 className="text-2xl font-bold mb-6 text-neutral-dark">

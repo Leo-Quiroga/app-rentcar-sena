@@ -1,13 +1,13 @@
-// src/pages/ReservationDetail.jsx
+// Página de detalle de reserva
 import { useParams, useNavigate } from "react-router-dom";
 import { mockReservations } from "../data/mockReservations";
 
 export default function ReservationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  // Buscar la reserva por ID
   const reserva = mockReservations.find((r) => String(r.id) === String(id));
-
+  // Si no se encuentra la reserva, mostrar mensaje de error
   if (!reserva) {
     return (
       <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center">
@@ -21,7 +21,7 @@ export default function ReservationDetail() {
       </div>
     );
   }
-
+  // Renderizar detalles de la reserva
   return (
     <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <h1 className="text-2xl font-bold mb-6">Detalle de la Reserva</h1>

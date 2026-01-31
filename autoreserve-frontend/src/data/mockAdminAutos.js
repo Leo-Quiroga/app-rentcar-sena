@@ -1,3 +1,4 @@
+//Mock temporal de autos para el admin
 export const mockAdminAutos = [
   {
     id: "1",

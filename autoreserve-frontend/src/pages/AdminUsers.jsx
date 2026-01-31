@@ -1,16 +1,17 @@
+// Página de administración de usuarios
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getUsers, deleteUser } from "../api/adminUsersApi";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
-
+  // Cargar usuarios al montar el componente
   useEffect(() => {
     getUsers().then((data) => {
       setUsers(data.content || []);
     });
   }, []);
-
+  // Manejar eliminación de usuario
   const handleDelete = async (id) => {
     if (window.confirm("¿Seguro que deseas eliminar este usuario?")) {
       try {
@@ -22,7 +23,7 @@ export default function AdminUsers() {
       }
     }
   };
-
+  // Renderizar tabla de usuarios
   return (
     <div className="w-full max-w-[1400px] mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

@@ -1,3 +1,4 @@
+//Mock temporal de categorías de autos
 export const mockCategories = [
   {
     id: "1",

@@ -1,3 +1,4 @@
+// Página de categorías de vehículos
 import { useState, useMemo } from "react";
 import CategoryCard from "../components/CategoryCard";
 import { mockCategories } from "../data/mockCategories";
@@ -18,7 +19,7 @@ export default function Categories() {
     if (sort === "name_desc") return copy.sort((a, b) => b.name.localeCompare(a.name));
     return copy;
   }, [q, sort]);
-
+  // Renderizar lista de categorías con buscador y ordenamiento
   return (
     <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <header className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

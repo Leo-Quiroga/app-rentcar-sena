@@ -1,3 +1,4 @@
+// Gestión del diseño principal de la aplicación con Header y Footer fijos
 // src/layouts/MainLayout.jsx
 import Header from "../components/Header";
 import Footer from "../components/Footer";

@@ -1,15 +1,17 @@
+// Página de tickets de soporte
 import { useState } from "react";
 import { mockTickets } from "../data/mockTickets";
 
 export default function SupportTicket() {
+  // Estado para tickets y formulario
   const [tickets, setTickets] = useState(mockTickets);
   const [form, setForm] = useState({ subject: "", message: "" });
-
+  // Manejo de cambios en el formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
   };
-
+  // Manejo del envío del formulario
   const handleSubmit = (e) => {
     e.preventDefault();
     const newTicket = {
@@ -22,7 +24,7 @@ export default function SupportTicket() {
     setForm({ subject: "", message: "" });
     alert("✅ Ticket creado (mock). En el futuro se conectará a la API.");
   };
-
+  // Renderizado de la página
   return (
     <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-12">
       {/* Encabezado */}

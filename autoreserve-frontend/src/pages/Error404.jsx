@@ -1,3 +1,4 @@
+// Pantalla de error 404 - Página no encontrada
 import { Link } from "react-router-dom";
 
 export default function Error404() {

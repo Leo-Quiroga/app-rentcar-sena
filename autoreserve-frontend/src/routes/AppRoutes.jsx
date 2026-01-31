@@ -1,3 +1,5 @@
+// Pantalla de rutas de la aplicación
+// Define todas las rutas principales, de usuario y de administración
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 

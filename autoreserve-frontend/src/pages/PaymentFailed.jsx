@@ -1,3 +1,4 @@
+// Pantalla que muestra el estado de pago fallido
 import { Link } from "react-router-dom";
 
 export default function PaymentFailed() {

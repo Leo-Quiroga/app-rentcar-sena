@@ -1,3 +1,4 @@
+// Componente para mostrar una tarjeta de auto
 export default function CarCard({ car, onDetail, onReserve, canReserve = false }) {
   const price = car?.pricePerDay ?? car?.price ?? null;
   const rating = car?.rating ?? 0;

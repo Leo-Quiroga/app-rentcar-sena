@@ -1,16 +1,18 @@
+// Pantalla de administración de categorías para el administrador
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { mockCategories } from "../data/mockCategories";
 
 export default function AdminCategories() {
+  // Estado de la lista de categorías (mock temporal)
   const [categories, setCategories] = useState(mockCategories);
-
+  // Manejar eliminación de categoría
   const handleDelete = (id) => {
     if (window.confirm("¿Seguro que quieres eliminar esta categoría?")) {
       setCategories(categories.filter((cat) => cat.id !== id));
     }
   };
-
+  // Renderizar tabla de categorías con acciones
   return (
     <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-8">

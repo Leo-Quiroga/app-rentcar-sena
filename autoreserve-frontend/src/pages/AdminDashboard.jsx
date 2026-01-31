@@ -1,6 +1,8 @@
+// Panel de administración con accesos rápidos y métricas
 import { Link } from "react-router-dom";
 
 export default function AdminDashboard() {
+  // Renderizar panel de administración
   return (
     <div className="min-h-screen bg-neutral-light px-4 py-10 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">

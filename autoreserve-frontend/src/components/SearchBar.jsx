@@ -1,4 +1,4 @@
-
+// Componente SearchBar con autocompletado para ciudades
 import { useState } from "react";
 import { cities } from "../data/mockCities";
 

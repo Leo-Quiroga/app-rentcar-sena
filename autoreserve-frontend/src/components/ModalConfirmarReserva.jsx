@@ -1,5 +1,4 @@
-
-
+// Componente para confirmar la reserva de un auto
 // src/components/ModalConfirmarReserva.jsx
 export default function ModalConfirmarReserva({ car, filters, onClose, onConfirm }) {
   if (!car || !filters || !filters.startDate || !filters.endDate) return null;

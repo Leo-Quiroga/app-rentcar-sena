@@ -1,5 +1,4 @@
-
-
+// Componente para el pie de página
 // src/components/Footer.jsx
 import { Link } from "react-router-dom";
 

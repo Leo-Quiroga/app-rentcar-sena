@@ -1,3 +1,4 @@
+// Componente para mostrar los detalles de un auto en un modal
 export default function ModalCarDetail({ car, filters, onClose, onReserve }) {
   if (!car) return null;
 

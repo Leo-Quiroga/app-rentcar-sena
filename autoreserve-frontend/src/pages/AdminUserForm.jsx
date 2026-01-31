@@ -1,3 +1,4 @@
+// Página de formulario para crear o editar usuarios
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createUser, updateUser, getUserById } from "../api/adminUsersApi";
@@ -6,7 +7,7 @@ export default function AdminUserForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const editing = Boolean(id);
-
+  // Estado del formulario
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -16,7 +17,7 @@ export default function AdminUserForm() {
     confirmPassword: "", // <-- Nuevo campo
     role: "cliente",
   });
-
+  // Cargar datos del usuario si estamos editando
   useEffect(() => {
     if (editing) {
       getUserById(id)
@@ -37,12 +38,12 @@ export default function AdminUserForm() {
         });
     }
   }, [id, editing, navigate]);
-
+  // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
+  // Manejar envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -55,11 +56,11 @@ export default function AdminUserForm() {
     // 2. Limpiar el payload para el Back (quitar confirmPassword y password vacío si es edición)
     const payload = { ...formData };
     delete payload.confirmPassword; // Nunca se envía al back
-
+    // Si estamos editando y la contraseña está vacía, no la enviamos
     if (editing && !payload.password) {
       delete payload.password;
     }
-
+    // 3. Llamar a la API correspondiente
     try {
       if (editing) {
         await updateUser(id, payload);
@@ -71,7 +72,7 @@ export default function AdminUserForm() {
       alert("Error al guardar el usuario " + error.message);
     }
   };
-
+  // Renderizar formulario
   return (
     <div className="max-w-2xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <h1 className="text-2xl font-bold mb-6">

@@ -1,3 +1,4 @@
+// Pantalla de calendario para que el administrador gestione la disponibilidad de un auto
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { mockAdminAutos } from "../data/mockAdminAutos";
@@ -8,12 +9,12 @@ export default function AdminAutoCalendar() {
 
   // Buscar auto por ID
   const auto = mockAdminAutos.find((a) => a.id === id);
-
+  // Estado para las fechas no disponibles (mock temporal)
   const [unavailableDates, setUnavailableDates] = useState([
     "2025-09-20",
     "2025-09-25",
   ]); 
-
+ // Si no se encuentra el auto, mostrar mensaje de error
   if (!auto) {
     return (
       <div className="text-center py-12">
@@ -28,6 +29,7 @@ export default function AdminAutoCalendar() {
     );
   }
 
+  // Manejar selección/deselección de fechas
   const handleToggleDate = (date) => {
     if (unavailableDates.includes(date)) {
       setUnavailableDates(unavailableDates.filter((d) => d !== date));
@@ -36,7 +38,7 @@ export default function AdminAutoCalendar() {
     }
   };
 
-  // 
+  //  Generar días del mes actual
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
@@ -46,7 +48,7 @@ export default function AdminAutoCalendar() {
     const date = new Date(year, month, i + 1);
     return date.toISOString().split("T")[0]; // formato YYYY-MM-DD
   });
-
+ // Renderizar calendario y controles
   return (
     <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-6 mt-10">
       <h1 className="text-2xl font-bold mb-6 text-neutral-dark">

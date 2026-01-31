@@ -1,4 +1,4 @@
-// // src/pages/Home.jsx
+// Página principal - Home
 import { useEffect, useState } from "react";
 import SearchBar from "../components/SearchBar";
 import CategoryCard from "../components/CategoryCard";
@@ -8,7 +8,7 @@ import { categories, cars } from "../data/mockData";
 import ModalCarDetail from "../components/ModalCarDetail";
 import ModalConfirmarReserva from "../components/ModalConfirmarReserva";
 import ModalReservaConfirmada from "../components/ModalReservaConfirmada";
-
+// Componente principal de la página de inicio
 export default function Home() {
   const [filters, setFilters] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -44,7 +44,7 @@ export default function Home() {
     setCarToReserve(null);          // cierra modal confirmar
     setReservaConfirmada(newReserva); // abre modal reserva confirmada
   };
- 
+ // Renderizar página de inicio
   return (
     <div className="bg-neutral-light min-h-screen">
       <div className="space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

@@ -1,6 +1,6 @@
 import { apiFetch } from "../api/http";
 
-// Registro de nuevo usuario
+// Petición de login
 export function loginRequest(email, password) {
   return apiFetch("/api/auth/login", {
     method: "POST",

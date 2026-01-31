@@ -1,3 +1,4 @@
+//Mock temporal de categorías y autos para la aplicación de renta de autos
 export const categories = [
   {
     id: 1,

@@ -1,5 +1,6 @@
 import { apiFetch } from "./http";
 
+//Api para la gestión de usuarios por parte del administrador
 // Obtener lista de usuarios con paginación
 export function getUsers(page = 0, size = 10) {
   return apiFetch(`/api/admin/users?page=${page}&size=${size}`);

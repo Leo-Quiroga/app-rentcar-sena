@@ -1,3 +1,4 @@
+// Mock temporal de sedes de autos para la aplicación de renta de autos
 export const mockSedes = [
   {
     id: 1,

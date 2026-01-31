@@ -1,10 +1,11 @@
+// Página de administración de sedes
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { mockSedes } from "../data/mockSedes";
-
+// Renderizar lista de sedes con opciones para editar o eliminar
 export default function AdminSedes() {
   const [sedes] = useState(mockSedes);
-
+  // Renderizar tabla de sedes
   return (
     <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center mb-6">
@@ -16,7 +17,7 @@ export default function AdminSedes() {
           + Nueva Sede
         </Link>
       </div>
-
+      // Si no hay sedes, mostrar mensaje
       {sedes.length === 0 ? (
         <p className="text-gray-600">No hay sedes registradas.</p>
       ) : (

@@ -1,3 +1,4 @@
+// Página de registro de nuevos usuarios
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -36,14 +37,14 @@ export default function Register() {
       password: formData.password,
       phone: formData.phone,
     };
-
+    // 3. Enviar datos al backend
     try {
       const response = await fetch("http://localhost:8080/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dataToSend),
       });
-
+      // 4. Manejar respuesta del backend
       if (response.ok) {
         alert("Registro exitoso");
         // Aquí podrías redirigir al login
@@ -54,7 +55,7 @@ export default function Register() {
           setError("Error en el registro. Intenta de nuevo. " + err.message);
     }
   };
-
+  // Renderizado del formulario de registro
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-light px-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">

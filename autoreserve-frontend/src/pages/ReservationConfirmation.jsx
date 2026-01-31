@@ -1,10 +1,10 @@
-// src/pages/ReservationConfirmation.jsx
+// Página de confirmación de reserva
 import { Link, useLocation } from "react-router-dom";
 
 export default function ReservationConfirmation() {
   const location = useLocation();
   const reserva = location.state?.reserva; // 📌 recibe datos desde navegación
-
+  // Si no hay datos de reserva, mostrar mensaje
   if (!reserva) {
     return (
       <div className="text-center py-12">
@@ -21,7 +21,7 @@ export default function ReservationConfirmation() {
       </div>
     );
   }
-
+  // Renderizar detalles de la reserva confirmada
   return (
     <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center">
       <h1 className="text-2xl font-bold mb-6">✅ Reserva Confirmada</h1>

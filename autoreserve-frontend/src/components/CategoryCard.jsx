@@ -1,7 +1,5 @@
-
-
 import { Link } from "react-router-dom";
-
+// Componente para mostrar una tarjeta de categoría
 export default function CategoryCard({ category, onSelect }) {
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition flex flex-col">

@@ -1,87 +1,4 @@
-// import { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import { apiFetch } from "../api/http";
-
-// export default function Profile() {
-//   const navigate = useNavigate();
-//   const [profile, setProfile] = useState(null);
-//   const [loading, setLoading] = useState(true);
-
-//   const formatDate = (isoDate) => {
-//     if (!isoDate) return "—";
-//     const date = new Date(isoDate);
-//     return date.toLocaleDateString("es-CO", {
-//       day: "2-digit",
-//       month: "2-digit",
-//       year: "numeric",
-//     });
-//   };
-
-//   useEffect(() => {
-//     const loadProfile = async () => {
-//       try {
-//         const data = await apiFetch("/api/profile/me");
-//         setProfile(data);
-//       } catch (err) {
-//         console.error("Error cargando perfil", err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     loadProfile();
-//   }, []);
-
-//   if (loading) {
-//     return <p className="p-6">Cargando perfil...</p>;
-//   }
-
-//   if (!profile) {
-//     return <p className="p-6 text-red-500">No se pudo cargar el perfil</p>;
-//   }
-
-//   return (
-//     <div className="max-w-3xl mx-auto py-10 px-4 space-y-4">
-//       <h1 className="text-2xl font-bold">Mi Perfil</h1>
-
-//       <div className="bg-white p-6 rounded shadow space-y-2">
-//         <p>
-//           <strong>Nombre:</strong> {profile.firstName} {profile.lastName}
-//         </p>
-//         <p>
-//           <strong>Email:</strong> {profile.email}
-//         </p>
-//         <p>
-//           <strong>Teléfono:</strong> {profile.phone || "—"}
-//         </p>
-//         <p>
-//           <strong>Ciudad:</strong> {profile.city || "—"}
-//         </p>
-//         <p>
-//           <strong>Dirección:</strong> {profile.address || "—"}
-//         </p>
-//         <p>
-//           <strong>Fecha de nacimiento:</strong> {profile.birthDate || "—"}
-//         </p>
-//         <p>
-//           <strong>Licencia de conducción:</strong>{" "}
-//           {profile.drivingLicense || "—"}
-//         </p>
-//         <p>
-//           <strong>Inscrito desde:</strong> {formatDate(profile.createdAt)}
-//         </p>
-
-//         <button
-//           onClick={() => navigate("/perfil/editar")}
-//           className="mt-4 px-4 py-2 bg-primary text-white rounded"
-//         >
-//           Editar perfil
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
+// Página de perfil de usuario
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api/http";
@@ -101,7 +18,7 @@ export default function Profile() {
       year: "numeric",
     });
   };
-
+  // Cargar datos del perfil al montar el componente
   useEffect(() => {
     const loadProfile = async () => {
       try {
@@ -115,7 +32,7 @@ export default function Profile() {
     };
     loadProfile();
   }, []);
-
+  // Renderizado condicional según el estado de carga y datos
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -126,7 +43,7 @@ export default function Profile() {
       </div>
     );
   }
-
+  // Si no se pudo cargar el perfil
   if (!profile) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
@@ -136,7 +53,7 @@ export default function Profile() {
       </div>
     );
   }
-
+  // Renderizar perfil
   return (
     <div className="bg-neutral-light min-h-screen">
       <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-8">
@@ -230,7 +147,7 @@ function InfoRow({ label, value, isMono = false }) {
     </div>
   );
 }
-
+// Enlace rápido en forma de tarjeta
 function QuickLink({ label, path }) {
   const navigate = useNavigate();
   return (

@@ -1,19 +1,20 @@
+// Pantalla de contacto con formulario y FAQ
 import { useState } from "react";
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
-
+  // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
   };
-
+  // Manejar envío del formulario
   const handleSubmit = (e) => {
     e.preventDefault();
     alert("✅ Mensaje enviado (mock). En el futuro se conectará al backend.");
     setForm({ name: "", email: "", message: "" });
   };
-
+  // Renderizar pantalla de contacto
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-12">
       {/* Encabezado */}

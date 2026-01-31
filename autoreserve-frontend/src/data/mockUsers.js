@@ -1,3 +1,4 @@
+// Mock temporal de usuarios para la aplicación de renta de autos
 export const mockUsers = [
   {
     id: 1,

@@ -1,3 +1,4 @@
+// Componente base para modales
 export default function ModalBase({ title, children, onClose }) {
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {

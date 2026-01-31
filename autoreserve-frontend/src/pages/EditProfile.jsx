@@ -1,3 +1,4 @@
+// Pantalla para editar el perfil del usuario
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api/http";
@@ -6,7 +7,7 @@ export default function EditProfile() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(null);
   const [saving, setSaving] = useState(false);
-
+  // Cargar datos del perfil al montar el componente
   useEffect(() => {
     const loadProfile = async () => {
       try {
@@ -28,12 +29,12 @@ export default function EditProfile() {
 
     loadProfile();
   }, []);
-
+  // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-
+  // Manejar envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -50,7 +51,7 @@ export default function EditProfile() {
       setSaving(false);
     }
   };
-
+  // Si los datos no están cargados, mostramos un loader
   if (!formData) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -61,7 +62,7 @@ export default function EditProfile() {
       </div>
     );
   }
-
+  // Renderizar formulario de edición de perfil
   return (
     <div className="bg-neutral-light min-h-screen">
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">

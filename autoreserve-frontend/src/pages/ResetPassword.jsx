@@ -1,18 +1,19 @@
+// Página de restablecimiento de contraseña
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
-
+  // Manejo del envío del formulario
   const handleSubmit = (e) => {
     e.preventDefault();
-    // 🔗 Aquí luego se conectará con la API para enviar el correo de reseteo
+    // Aquí luego se conectará con la API para enviar el correo de reseteo
     if (email.trim()) {
       setSubmitted(true);
     }
   };
-
+  // Renderizado del formulario o mensaje de éxito
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-light px-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">

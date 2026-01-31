@@ -1,3 +1,4 @@
+// Página de políticas de uso de AutoReserve
 export default function Policies() {
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-10">

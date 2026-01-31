@@ -1,3 +1,4 @@
+//Mock temporal de ciudades para autocompletado en la búsqueda
 export const cities = [
     //Principales ciudades de Colombia
   "Bogotá",
