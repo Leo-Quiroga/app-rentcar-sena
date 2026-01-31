@@ -26,6 +26,7 @@ import ReservationConfirmation from "../pages/ReservationConfirmation";
 import PaymentFailed from "../pages/PaymentFailed";
 import Invoice from "../pages/Invoice";
 import ChangePassword from "../pages/ChangePassword";
+import EditProfile from "../pages/EditProfile";
 
 // Administración
 import AdminDashboard from "../pages/AdminDashboard";
@@ -127,6 +128,14 @@ export default function AppRoutes() {
               <Profile />
             </MainLayout>
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/perfil/editar"
+        element={
+          <MainLayout>
+            <EditProfile />
+          </MainLayout>
         }
       />
       <Route

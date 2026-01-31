@@ -12,66 +12,35 @@ import java.time.LocalDateTime;
 @Table(name = "user")
 public class User {
 
-    /**
-     * Identificador único del usuario.
-     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Nombre(s) del usuario.
-     */
     @Column(nullable = false, length = 100)
     private String firstName;
 
-    /**
-     * Apellido(s) del usuario.
-     */
     @Column(length = 100)
     private String lastName;
 
-    /**
-     * Correo electrónico único, utilizado como principal identificador de acceso (username).
-     */
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
-    /**
-     * Contraseña almacenada en formato Hash (BCrypt) para garantizar la seguridad.
-     */
     @Column(nullable = false, length = 255)
     private String passwordHash;
 
-    /**
-     * Número telefónico de contacto del usuario.
-     */
     @Column(length = 30)
     private String phone;
 
-    /**
-     * Fecha y hora de registro del usuario en la plataforma.
-     */
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    /**
-     * Estado operativo del usuario dentro del sistema.
-     */
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    /**
-     * Rol asignado que define las autoridades y permisos del usuario.
-     */
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    /**
-     * Constructor por defecto. Inicializa automáticamente la fecha de creación
-     * y establece el estado inicial como activo.
-     */
     public User() {
         this.createdAt = LocalDateTime.now();
         this.status = Status.ACTIVE;

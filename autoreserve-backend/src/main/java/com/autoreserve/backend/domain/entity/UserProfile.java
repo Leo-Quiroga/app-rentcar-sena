@@ -12,49 +12,25 @@ import java.time.LocalDate;
 @Table(name = "user_profile")
 public class UserProfile {
 
-    /**
-     * Identificador único del perfil.
-     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Relación uno a uno con la entidad User.
-     * Vincula este perfil a una cuenta de usuario específica de forma obligatoria.
-     */
     @OneToOne
     @JoinColumn(name = "user_id", unique = true, nullable = false)
     private User user;
 
-    /**
-     * Dirección residencial del usuario.
-     */
     @Column(length = 255)
     private String address;
 
-    /**
-     * Ciudad de residencia del usuario.
-     */
     @Column(length = 100)
     private String city;
-
-    /**
-     * Fecha de nacimiento del usuario.
-     * Fundamental para verificar requisitos de edad mínima para conducir.
-     */
     private LocalDate birthDate;
 
-    /**
-     * Número de licencia de conducir.
-     * Documento esencial para habilitar la entrega de un vehículo.
-     */
     @Column(length = 100)
     private String drivingLicense;
 
-    /**
-     * Constructor por defecto requerido por JPA.
-     */
+
     public UserProfile() {
     }
 
