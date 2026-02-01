@@ -17,18 +17,38 @@ export async function apiFetch(endpoint, options = {}) {
   });
 
   if (!response.ok) {
-    // Si el error es un JSON (como el que te salió), lo parseamos
     const errorData = await response.json().catch(() => ({}));
-
-    // Si el back envió un campo "message" o "error", lo usamos
-    const errorMessage = errorData.message || errorData.error || "Error en la petición";
-    throw new Error(errorMessage);
+    
+    // Mapear códigos de estado a mensajes específicos
+    let errorMessage;
+    switch (response.status) {
+      case 400:
+        errorMessage = errorData.message || "Datos inválidos";
+        break;
+      case 401:
+        errorMessage = "Credenciales incorrectas";
+        break;
+      case 404:
+        errorMessage = "Usuario no encontrado";
+        break;
+      case 422:
+        errorMessage = errorData.message || "Formato de email inválido";
+        break;
+      case 500:
+        errorMessage = "Error interno del servidor";
+        break;
+      default:
+        errorMessage = errorData.message || "Error en la petición";
+    }
+    
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    error.data = errorData;
+    throw error;
   }
 
-  // Si es un DELETE exitoso, a veces el back devuelve 200 con un String o 204 sin nada
   if (response.status === 204) return null;
 
-  // Intentamos parsear a JSON, si falla (porque es un String), devolvemos el texto
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.includes("application/json")) {
     return await response.json();
