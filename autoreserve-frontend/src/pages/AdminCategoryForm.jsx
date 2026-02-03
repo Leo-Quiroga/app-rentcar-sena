@@ -1,7 +1,7 @@
 // Pantalla de formulario para que el administrador cree o edite una categoría
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { mockCategories } from "../data/mockCategories";
+import { getAdminCategoryById, createCategory, updateCategory } from "../api/adminCategoriesApi";
 
 export default function AdminCategoryForm() {
   const { id } = useParams();
@@ -9,43 +9,63 @@ export default function AdminCategoryForm() {
 
   // Si hay id, es edición; si no, es creación
   const isEditing = Boolean(id);
-  const [category, setCategory] = useState({ name: "", image: "" });
+  const [category, setCategory] = useState({ name: "", description: "", image: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   // Cargar datos de la categoría si estamos editando
   useEffect(() => {
     if (isEditing) {
-      const found = mockCategories.find((c) => String(c.id) === String(id));
-      if (found) {
-        setCategory(found);
-      }
+      loadCategory();
     }
   }, [id, isEditing]);
+
+  const loadCategory = async () => {
+    try {
+      setLoading(true);
+      const data = await getAdminCategoryById(id);
+      setCategory({
+        name: data.name || "",
+        description: data.description || "",
+        image: data.image || ""
+      });
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error cargando categoría:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCategory((prev) => ({ ...prev, [name]: value }));
   };
   // Manejar envío del formulario
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!category.name.trim()) {
       alert("El nombre es obligatorio");
       return;
     }
-    if (!category.image.trim()) {
-      alert("La imagen es obligatoria");
-      return;
-    }
 
-    if (isEditing) {
-      console.log("✅ Categoría actualizada:", category);
-    } else {
-      console.log("✅ Categoría creada:", {
-        ...category,
-        id: Date.now().toString(),
-      });
+    try {
+      setLoading(true);
+      if (isEditing) {
+        await updateCategory(id, category);
+        alert("Categoría actualizada exitosamente");
+      } else {
+        await createCategory(category);
+        alert("Categoría creada exitosamente");
+      }
+      navigate("/admin/categorias");
+    } catch (err) {
+      alert('Error: ' + err.message);
+      console.error('Error guardando categoría:', err);
+    } finally {
+      setLoading(false);
     }
-
-    navigate("/admin/categorias");
   };
   // Renderizar formulario
   return (
@@ -75,6 +95,25 @@ export default function AdminCategoryForm() {
           />
         </div>
 
+        {/* Descripción */}
+        <div>
+          <label
+            htmlFor="description"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Descripción
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            value={category.description}
+            onChange={handleChange}
+            className="w-full border rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
+            placeholder="Descripción de la categoría"
+            rows="3"
+          />
+        </div>
+
         {/* Imagen */}
         <div>
           <label
@@ -90,14 +129,16 @@ export default function AdminCategoryForm() {
             value={category.image}
             onChange={handleChange}
             className="w-full border rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
-            placeholder="https://ejemplo.com/imagen.jpg"
-            required
+            placeholder="https://ejemplo.com/imagen.jpg o ruta local"
           />
           {category.image && (
             <img
               src={category.image}
               alt="Vista previa"
               className="h-24 w-full object-cover rounded mt-2"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
             />
           )}
         </div>
@@ -113,9 +154,10 @@ export default function AdminCategoryForm() {
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
+            disabled={loading}
+            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark disabled:opacity-50"
           >
-            {isEditing ? "Guardar cambios" : "Crear Categoría"}
+            {loading ? "Guardando..." : (isEditing ? "Guardar cambios" : "Crear Categoría")}
           </button>
         </div>
       </form>

@@ -1,15 +1,37 @@
 // Página de categorías de vehículos
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import CategoryCard from "../components/CategoryCard";
-import { mockCategories } from "../data/mockCategories";
+import { getCategories } from "../api/categoriesApi";
 
 export default function Categories() {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("name_asc");
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Filtrado + ordenamiento (rápido y predecible para cuando se reemplace por API)
+  // Cargar categorías desde la API
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setLoading(true);
+        const data = await getCategories();
+        setCategories(data);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+        console.error('Error cargando categorías:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  // Filtrado + ordenamiento
   const filtered = useMemo(() => {
-    const result = mockCategories.filter((c) =>
+    const result = categories.filter((c) =>
       c.name.toLowerCase().includes(q.trim().toLowerCase())
     );
 
@@ -18,7 +40,28 @@ export default function Categories() {
     if (sort === "name_asc") return copy.sort((a, b) => a.name.localeCompare(b.name));
     if (sort === "name_desc") return copy.sort((a, b) => b.name.localeCompare(a.name));
     return copy;
-  }, [q, sort]);
+  }, [categories, q, sort]);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12">
+          <p className="text-gray-600">Cargando categorías...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12">
+          <p className="text-red-600">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
   // Renderizar lista de categorías con buscador y ordenamiento
   return (
     <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">

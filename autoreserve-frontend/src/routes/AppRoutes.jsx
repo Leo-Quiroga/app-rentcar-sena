@@ -251,6 +251,14 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/admin/autos/editar/:id"
+        element={
+          <MainLayout>
+            <AdminAutoForm />
+          </MainLayout>
+        }
+      />
+      <Route
         path="/admin/autos/:id/calendario"
         element={
           <MainLayout>
@@ -270,6 +278,14 @@ export default function AppRoutes() {
       />
       <Route
         path="/admin/categorias/nueva"
+        element={
+          <MainLayout>
+            <AdminCategoryForm />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/admin/categorias/:id/editar"
         element={
           <MainLayout>
             <AdminCategoryForm />

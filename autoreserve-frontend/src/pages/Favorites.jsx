@@ -1,26 +1,43 @@
 // Pantalla de favoritos del usuario
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SearchBar from "../components/SearchBar";
 import CarCard from "../components/CarCard";
+import { getMyFavorites } from "../api/favoritesApi";
 // Modales
 import ModalCarDetail from "../components/ModalCarDetail";
 import ModalConfirmarReserva from "../components/ModalConfirmarReserva";
 import ModalReservaConfirmada from "../components/ModalReservaConfirmada";
 
-// Simulación de favoritos (luego se integrará con la lógica real)
-import { cars } from "../data/mockData";
-const mockFavorites = cars.slice(0, 3); // solo para probar, 3 autos favoritos
 // Componente principal de la página de favoritos
 export default function Favorites() {
   const [filters, setFilters] = useState(null);
+  const [favoriteCars, setFavoriteCars] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Modales
   const [selectedCar, setSelectedCar] = useState(null);
   const [carToReserve, setCarToReserve] = useState(null);
   const [reservaConfirmada, setReservaConfirmada] = useState(null);
 
-  // Lista de favoritos (luego esto vendrá de un contexto/estado global)
-  const favoriteCars = mockFavorites;
+  // Cargar favoritos
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        setLoading(true);
+        const data = await getMyFavorites();
+        setFavoriteCars(data);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+        console.error('Error cargando favoritos:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFavorites();
+  }, []);
 
   // Confirmación de la reserva
   const handleConfirmReservation = ({ car, filters, dias, total }) => {
@@ -35,6 +52,30 @@ export default function Favorites() {
     setCarToReserve(null);
     setReservaConfirmada(newReserva);
   };
+
+  if (loading) {
+    return (
+      <div className="bg-neutral-light min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="text-center py-12">
+            <p className="text-gray-600">Cargando favoritos...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-neutral-light min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="text-center py-12">
+            <p className="text-red-600">Error: {error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-neutral-light min-h-screen">

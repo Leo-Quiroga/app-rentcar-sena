@@ -1,13 +1,15 @@
 // Página de checkout para procesar pagos de reservas
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { createReservation } from "../api/reservationsApi";
 
 export default function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // obtenemos la reserva activa desde la navegación
-  const reserva = location.state?.reserva;
+  // obtenemos los datos de reserva desde la navegación
+  const reservationData = location.state?.reservationData;
+  const [loading, setLoading] = useState(false);
   // Estado del formulario de pago
   const [paymentData, setPaymentData] = useState({
     name: "",
@@ -20,28 +22,54 @@ export default function Checkout() {
     setPaymentData({ ...paymentData, [e.target.name]: e.target.value });
   };
   // Manejar envío del formulario
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!reserva) {
-      alert("No hay una reserva activa.");
+    if (!reservationData) {
+      alert("No hay datos de reserva.");
       return;
     }
 
-    // Lógica mock: si tarjeta empieza en 4 → éxito, sino → fallido
-    if (paymentData.cardNumber.startsWith("4")) {
-      navigate("/reservas/confirmacion", { state: { reserva } });
-    } else {
-      navigate("/reservas/pago-fallido", { state: { reserva } });
+    try {
+      setLoading(true);
+      
+      // Crear la reserva en el backend
+      const response = await createReservation({
+        carId: reservationData.carId,
+        startDate: reservationData.startDate,
+        endDate: reservationData.endDate
+      });
+
+      // Simular procesamiento de pago
+      if (paymentData.cardNumber.startsWith("4")) {
+        navigate("/reservas/confirmacion", { 
+          state: { 
+            reservation: response,
+            paymentSuccess: true 
+          } 
+        });
+      } else {
+        navigate("/reservas/pago-fallido", { 
+          state: { 
+            reservation: response,
+            paymentFailed: true 
+          } 
+        });
+      }
+    } catch (error) {
+      alert('Error creando reserva: ' + error.message);
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Si no hay reserva, mostramos un mensaje
-  if (!reserva) {
+  // Si no hay datos de reserva, mostramos un mensaje
+  if (!reservationData) {
     return (
       <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center">
         <h1 className="text-2xl font-bold mb-4">Checkout</h1>
-        <p className="text-gray-600">No hay ninguna reserva activa.</p>
+        <p className="text-gray-600">No hay datos de reserva.</p>
         <button
           onClick={() => navigate("/")}
           className="mt-6 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
@@ -59,10 +87,10 @@ export default function Checkout() {
       {/* Resumen de la reserva */}
       <div className="bg-white shadow rounded-lg p-6 mb-8">
         <h2 className="text-lg font-semibold mb-4">Resumen de la Reserva</h2>
-        <p><strong>Auto:</strong> {reserva.car.name}</p>
-        <p><strong>Retiro:</strong> {reserva.pickupCity} ({reserva.startDate})</p>
-        <p><strong>Entrega:</strong> {reserva.dropoffCity} ({reserva.endDate})</p>
-        <p><strong>Total:</strong> ${reserva.total}</p>
+        <p><strong>Auto:</strong> {reservationData.carBrand} {reservationData.carModel}</p>
+        <p><strong>Fechas:</strong> {reservationData.startDate} - {reservationData.endDate}</p>
+        <p><strong>Sede:</strong> {reservationData.branchName}</p>
+        <p><strong>Total estimado:</strong> ${reservationData.estimatedTotal}</p>
       </div>
 
       {/* Formulario de pago */}
@@ -135,9 +163,10 @@ export default function Checkout() {
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
+            disabled={loading}
+            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark disabled:opacity-50"
           >
-            Pagar
+            {loading ? "Procesando..." : "Pagar"}
           </button>
         </div>
       </form>

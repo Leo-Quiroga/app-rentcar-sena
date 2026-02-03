@@ -19,26 +19,31 @@ export async function apiFetch(endpoint, options = {}) {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     
-    // Mapear códigos de estado a mensajes específicos
+    // Manejar nuevos formatos de error del backend
     let errorMessage;
-    switch (response.status) {
-      case 400:
-        errorMessage = errorData.message || "Datos inválidos";
-        break;
-      case 401:
-        errorMessage = "Credenciales incorrectas";
-        break;
-      case 404:
-        errorMessage = "Usuario no encontrado";
-        break;
-      case 422:
-        errorMessage = errorData.message || "Formato de email inválido";
-        break;
-      case 500:
-        errorMessage = "Error interno del servidor";
-        break;
-      default:
-        errorMessage = errorData.message || "Error en la petición";
+    if (errorData.success === false) {
+      errorMessage = errorData.error || "Error en la petición";
+    } else {
+      // Mantener compatibilidad con formato anterior
+      switch (response.status) {
+        case 400:
+          errorMessage = errorData.message || "Datos inválidos";
+          break;
+        case 401:
+          errorMessage = "Credenciales incorrectas";
+          break;
+        case 404:
+          errorMessage = "Recurso no encontrado";
+          break;
+        case 422:
+          errorMessage = errorData.message || "Formato de datos inválido";
+          break;
+        case 500:
+          errorMessage = "Error interno del servidor";
+          break;
+        default:
+          errorMessage = errorData.message || "Error en la petición";
+      }
     }
     
     const error = new Error(errorMessage);
@@ -51,7 +56,20 @@ export async function apiFetch(endpoint, options = {}) {
 
   const contentType = response.headers.get("content-type");
   if (contentType && contentType.includes("application/json")) {
-    return await response.json();
+    const data = await response.json();
+    
+    // Si la respuesta tiene formato {success: true, data: ...}, extraer data
+    if (data.success === true && data.data !== undefined) {
+      return data.data;
+    }
+    
+    // Si es una respuesta simple con success, devolver todo
+    if (data.success !== undefined) {
+      return data;
+    }
+    
+    // Formato anterior, devolver tal como está
+    return data;
   } else {
     return await response.text();
   }

@@ -1,12 +1,13 @@
 // Página de perfil de usuario
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../api/http";
+import { getMyProfile } from "../api/userApi";
 
 export default function Profile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Mantenemos tu lógica de formateo intacta
   const formatDate = (isoDate) => {
@@ -18,13 +19,17 @@ export default function Profile() {
       year: "numeric",
     });
   };
+
   // Cargar datos del perfil al montar el componente
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const data = await apiFetch("/api/profile/me");
+        setLoading(true);
+        const data = await getMyProfile();
         setProfile(data);
+        setError(null);
       } catch (err) {
+        setError(err.message);
         console.error("Error cargando perfil", err);
       } finally {
         setLoading(false);
@@ -32,6 +37,7 @@ export default function Profile() {
     };
     loadProfile();
   }, []);
+
   // Renderizado condicional según el estado de carga y datos
   if (loading) {
     return (
@@ -43,6 +49,26 @@ export default function Profile() {
       </div>
     );
   }
+
+  // Si hubo error cargando el perfil
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-red-500 bg-red-50 px-4 py-2 rounded-lg border border-red-100 shadow-sm mb-4">
+            Error: {error}
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Si no se pudo cargar el perfil
   if (!profile) {
     return (
@@ -53,6 +79,7 @@ export default function Profile() {
       </div>
     );
   }
+
   // Renderizar perfil
   return (
     <div className="bg-neutral-light min-h-screen">
@@ -106,7 +133,7 @@ export default function Profile() {
                 <InfoRow label="Nombre Completo" value={`${profile.firstName} ${profile.lastName}`} />
                 <InfoRow label="Email Registrado" value={profile.email} />
                 <InfoRow label="Teléfono" value={profile.phone} />
-                <InfoRow label="Fecha de Nacimiento" value={profile.birthDate} />
+                <InfoRow label="Fecha de Nacimiento" value={formatDate(profile.birthDate)} />
               </div>
             </section>
 
@@ -147,6 +174,7 @@ function InfoRow({ label, value, isMono = false }) {
     </div>
   );
 }
+
 // Enlace rápido en forma de tarjeta
 function QuickLink({ label, path }) {
   const navigate = useNavigate();

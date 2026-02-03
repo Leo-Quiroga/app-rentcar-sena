@@ -1,11 +1,77 @@
 // Pantalla de administración de autos para el administrador
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { mockAdminAutos } from "../data/mockAdminAutos";
+import { getAdminCars, deleteCar } from "../api/adminCarsApi";
 
 export default function AdminAutos() {
-  // Estado de la lista de autos (mock temporal)
-  const [autos] = useState(mockAdminAutos);
+  const [autos, setAutos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Cargar autos desde la API
+  useEffect(() => {
+    loadAutos();
+  }, []);
+
+  const loadAutos = async () => {
+    try {
+      setLoading(true);
+      const data = await getAdminCars();
+      setAutos(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error cargando autos:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCar = async (carId, carModel) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el auto ${carModel}?`)) {
+      return;
+    }
+
+    try {
+      await deleteCar(carId);
+      // Recargar la lista
+      await loadAutos();
+      alert('Auto eliminado exitosamente');
+    } catch (err) {
+      alert(`Error al eliminar: ${err.message}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-light px-4 py-10 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <p className="text-gray-600">Cargando autos...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-neutral-light px-4 py-10 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <p className="text-red-600">Error: {error}</p>
+            <button 
+              onClick={loadAutos}
+              className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Renderizar tabla de autos con acciones
   return (
     <div className="min-h-screen bg-neutral-light px-4 py-10 sm:px-6 lg:px-8">
@@ -41,14 +107,14 @@ export default function AdminAutos() {
                   <td className="px-4 py-3">{auto.brand}</td>
                   <td className="px-4 py-3">{auto.model}</td>
                   <td className="px-4 py-3">{auto.year}</td>
-                  <td className="px-4 py-3">{auto.category}</td>
+                  <td className="px-4 py-3">{auto.categoryName}</td>
                   <td className="px-4 py-3">${auto.pricePerDay}</td>
                   <td
                     className={`px-4 py-3 font-medium ${
-                      auto.status === "Disponible" ? "text-green-600" : "text-red-600"
+                      auto.status === "AVAILABLE" ? "text-green-600" : "text-red-600"
                     }`}
                   >
-                    {auto.status}
+                    {auto.status === "AVAILABLE" ? "Disponible" : auto.status}
                   </td>
                   <td className="px-4 py-3 flex gap-2 justify-center">
                     <Link
@@ -65,7 +131,7 @@ export default function AdminAutos() {
                     </Link>
                     <button
                       className="text-red-600 hover:underline"
-                      onClick={() => alert(`Eliminar auto ${auto.model}`)}
+                      onClick={() => handleDeleteCar(auto.id, auto.model)}
                     >
                       🗑️ Eliminar
                     </button>

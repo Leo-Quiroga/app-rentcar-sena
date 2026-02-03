@@ -1,17 +1,19 @@
 // Pantalla para editar el perfil del usuario
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../api/http";
+import { getMyProfile, updateMyProfile } from "../api/userApi";
 
 export default function EditProfile() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
   // Cargar datos del perfil al montar el componente
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const data = await apiFetch("/api/profile/me");
+        const data = await getMyProfile();
         setFormData({
           firstName: data.firstName || "",
           lastName: data.lastName || "",
@@ -22,37 +24,42 @@ export default function EditProfile() {
           birthDate: data.birthDate || "",
           drivingLicense: data.drivingLicense || ""
         });
+        setError(null);
       } catch (err) {
+        setError(err.message);
         console.error("Error cargando perfil", err);
       }
     };
 
     loadProfile();
   }, []);
+
   // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
   // Manejar envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
+    setError(null);
 
     try {
-      await apiFetch("/api/profile/me", {
-        method: "PUT",
-        body: JSON.stringify(formData)
-      });
+      await updateMyProfile(formData);
+      alert('Perfil actualizado exitosamente');
       navigate("/perfil");
     } catch (err) {
+      setError(err.message);
       console.error("Error actualizando perfil", err);
     } finally {
       setSaving(false);
     }
   };
+
   // Si los datos no están cargados, mostramos un loader
-  if (!formData) {
+  if (!formData && !error) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-2">
@@ -62,6 +69,26 @@ export default function EditProfile() {
       </div>
     );
   }
+
+  // Si hubo error cargando
+  if (error && !formData) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-red-500 bg-red-50 px-4 py-2 rounded-lg border border-red-100 shadow-sm mb-4">
+            Error: {error}
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Renderizar formulario de edición de perfil
   return (
     <div className="bg-neutral-light min-h-screen">
@@ -74,6 +101,13 @@ export default function EditProfile() {
             Modifica tus datos personales para mantener tu cuenta actualizada.
           </p>
         </header>
+
+        {/* Error de actualización */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-600 text-sm">Error: {error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           

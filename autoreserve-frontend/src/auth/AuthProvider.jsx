@@ -9,9 +9,21 @@ export function AuthProvider({ children }) {
 
   // Al cargar la app, recuperar sesión
   useEffect(() => {
-    const stored = localStorage.getItem("auth");
-    if (stored) {
-      setUser(JSON.parse(stored));
+    try {
+      const stored = localStorage.getItem("auth");
+      if (stored) {
+        const parsedUser = JSON.parse(stored);
+        // Validar que el objeto tenga las propiedades necesarias
+        if (parsedUser && parsedUser.email && parsedUser.id) {
+          setUser(parsedUser);
+        } else {
+          // Si los datos están corruptos, limpiar localStorage
+          localStorage.removeItem("auth");
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing auth data:", error);
+      localStorage.removeItem("auth");
     }
     setLoading(false);
   }, []);
@@ -26,6 +38,11 @@ export function AuthProvider({ children }) {
       role: data.role,
       token: data.token
     };
+
+    // Validar que los datos del backend sean correctos
+    if (!authUser.email || !authUser.id) {
+      throw new Error("Datos de usuario incompletos del servidor");
+    }
 
     localStorage.setItem("auth", JSON.stringify(authUser));
     setUser(authUser);

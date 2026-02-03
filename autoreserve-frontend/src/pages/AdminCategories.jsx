@@ -1,17 +1,72 @@
 // Pantalla de administración de categorías para el administrador
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { mockCategories } from "../data/mockCategories";
+import { getAdminCategories, deleteCategory } from "../api/adminCategoriesApi";
 
 export default function AdminCategories() {
-  // Estado de la lista de categorías (mock temporal)
-  const [categories, setCategories] = useState(mockCategories);
-  // Manejar eliminación de categoría
-  const handleDelete = (id) => {
-    if (window.confirm("¿Seguro que quieres eliminar esta categoría?")) {
-      setCategories(categories.filter((cat) => cat.id !== id));
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Cargar categorías al montar el componente
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const data = await getAdminCategories();
+      setCategories(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error cargando categorías:', err);
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Manejar eliminación de categoría
+  const handleDelete = async (id, categoryName) => {
+    if (window.confirm(`¿Seguro que quieres eliminar la categoría "${categoryName}"?`)) {
+      try {
+        await deleteCategory(id);
+        // Recargar la lista después de eliminar
+        await loadCategories();
+        alert('Categoría eliminada exitosamente');
+      } catch (error) {
+        alert('Error al eliminar: ' + error.message);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12">
+          <p className="text-gray-600">Cargando categorías...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12">
+          <p className="text-red-600">Error: {error}</p>
+          <button 
+            onClick={loadCategories}
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Renderizar tabla de categorías con acciones
   return (
     <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
@@ -32,7 +87,7 @@ export default function AdminCategories() {
               <th className="border border-gray-200 px-4 py-2 text-left">ID</th>
               <th className="border border-gray-200 px-4 py-2 text-left">Nombre</th>
               <th className="border border-gray-200 px-4 py-2 text-left">Descripción</th>
-              <th className="border border-gray-200 px-4 py-2 text-left">Imagen</th>
+              <th className="border border-gray-200 px-4 py-2 text-left">Autos</th>
               <th className="border border-gray-200 px-4 py-2">Acciones</th>
             </tr>
           </thead>
@@ -40,16 +95,14 @@ export default function AdminCategories() {
             {categories.map((cat) => (
               <tr key={cat.id} className="hover:bg-gray-50">
                 <td className="border border-gray-200 px-4 py-2">{cat.id}</td>
-                <td className="border border-gray-200 px-4 py-2">{cat.name}</td>
+                <td className="border border-gray-200 px-4 py-2 font-medium">{cat.name}</td>
                 <td className="border border-gray-200 px-4 py-2">
-                  {cat.description}
+                  {cat.description || 'Sin descripción'}
                 </td>
-                <td className="border border-gray-200 px-4 py-2">
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="h-12 w-auto rounded"
-                  />
+                <td className="border border-gray-200 px-4 py-2 text-center">
+                  <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                    {cat.carCount || 0} autos
+                  </span>
                 </td>
                 <td className="border border-gray-200 px-4 py-2 text-center">
                   <div className="flex justify-center gap-2">
@@ -60,7 +113,7 @@ export default function AdminCategories() {
                       Editar
                     </Link>
                     <button
-                      onClick={() => handleDelete(cat.id)}
+                      onClick={() => handleDelete(cat.id, cat.name)}
                       className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
                     >
                       Eliminar

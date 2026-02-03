@@ -5,15 +5,32 @@ import { getUsers, deleteUser } from "../api/adminUsersApi";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   // Cargar usuarios al montar el componente
   useEffect(() => {
-    getUsers().then((data) => {
-      setUsers(data.content || []);
-    });
+    loadUsers();
   }, []);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await getUsers();
+      // El backend ahora devuelve {success: true, data: PagedUserResponse}
+      setUsers(data.content || data.users || []);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error cargando usuarios:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Manejar eliminación de usuario
-  const handleDelete = async (id) => {
-    if (window.confirm("¿Seguro que deseas eliminar este usuario?")) {
+  const handleDelete = async (id, userName) => {
+    if (window.confirm(`¿Seguro que deseas eliminar al usuario ${userName}?`)) {
       try {
         await deleteUser(id);
         setUsers((prev) => prev.filter((u) => u.id !== id));
@@ -23,6 +40,33 @@ export default function AdminUsers() {
       }
     }
   };
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-[1400px] mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12">
+          <p className="text-gray-600">Cargando usuarios...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full max-w-[1400px] mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="text-center py-12">
+          <p className="text-red-600">Error: {error}</p>
+          <button 
+            onClick={loadUsers}
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Renderizar tabla de usuarios
   return (
     <div className="w-full max-w-[1400px] mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
@@ -62,7 +106,7 @@ export default function AdminUsers() {
             </div>
             <div className="flex gap-2 pt-2">
               <Link to={`/admin/usuarios/${user.id}/editar`} className="flex-1 text-center py-2 border border-primary text-primary rounded font-bold text-sm hover:bg-primary hover:text-white transition-colors">Editar</Link>
-              <button onClick={() => handleDelete(user.id)} className="flex-1 py-2 border border-red-600 text-red-600 rounded font-bold text-sm hover:bg-red-600 hover:text-white transition-colors">Eliminar</button>
+              <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)} className="flex-1 py-2 border border-red-600 text-red-600 rounded font-bold text-sm hover:bg-red-600 hover:text-white transition-colors">Eliminar</button>
             </div>
           </div>
         ))}
@@ -119,7 +163,7 @@ export default function AdminUsers() {
                 <td className="px-4 py-4">
                   <div className="flex flex-col lg:flex-row justify-center items-center gap-2">
                     <Link to={`/admin/usuarios/${user.id}/editar`} className="w-full lg:w-20 py-1.5 text-center border border-primary text-primary rounded text-[11px] font-bold hover:bg-primary hover:text-white transition-all shadow-sm uppercase">Editar</Link>
-                    <button onClick={() => handleDelete(user.id)} className="w-full lg:w-20 py-1.5 text-center border border-red-600 text-red-600 rounded text-[11px] font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm uppercase">Borrar</button>
+                    <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)} className="w-full lg:w-20 py-1.5 text-center border border-red-600 text-red-600 rounded text-[11px] font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm uppercase">Borrar</button>
                   </div>
                 </td>
               </tr>

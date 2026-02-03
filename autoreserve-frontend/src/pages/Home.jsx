@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import SearchBar from "../components/SearchBar";
 import CategoryCard from "../components/CategoryCard";
 import CarCard from "../components/CarCard";
-import { categories, cars } from "../data/mockData";
+import { getCategories } from "../api/categoriesApi";
+import { getCars } from "../api/carsApi";
 // Modales
 import ModalCarDetail from "../components/ModalCarDetail";
 import ModalConfirmarReserva from "../components/ModalConfirmarReserva";
@@ -12,24 +13,61 @@ import ModalReservaConfirmada from "../components/ModalReservaConfirmada";
 export default function Home() {
   const [filters, setFilters] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [cars, setCars] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Modales
   const [selectedCar, setSelectedCar] = useState(null);
   const [carToReserve, setCarToReserve] = useState(null); // auto para confirmar
   const [reservaConfirmada, setReservaConfirmada] = useState(null);
 
-  const [randomCars, setRandomCars] = useState([]);
-
-  // Generar 10 autos aleatorios
+  // Cargar datos iniciales
   useEffect(() => {
-    const shuffled = [...cars].sort(() => 0.5 - Math.random());
-    setRandomCars(shuffled.slice(0, 10));
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [categoriesData, carsData] = await Promise.all([
+          getCategories(),
+          getCars({ size: 10 })
+        ]);
+        setCategories(categoriesData);
+        setCars(carsData);
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
-  // Si hay categoría seleccionada, mostramos autos de esa categoría en lugar de los aleatorios
-  const displayCars = selectedCategory
-    ? cars.filter((c) => c.category === selectedCategory.name).slice(0, 10)
-    : randomCars;
+  // Cargar autos por categoría
+  useEffect(() => {
+    if (selectedCategory) {
+      const loadCategoryCars = async () => {
+        try {
+          const carsData = await getCars({ categoryId: selectedCategory.id, size: 10 });
+          setCars(carsData);
+        } catch (error) {
+          console.error('Error cargando autos por categoría:', error);
+        }
+      };
+      loadCategoryCars();
+    } else {
+      // Recargar autos aleatorios
+      const loadRandomCars = async () => {
+        try {
+          const carsData = await getCars({ size: 10 });
+          setCars(carsData);
+        } catch (error) {
+          console.error('Error cargando autos:', error);
+        }
+      };
+      loadRandomCars();
+    }
+  }, [selectedCategory]);
 
   // Confirmación de la reserva (pasa del modal confirmar → modal confirmada)
   const handleConfirmReservation = ({ car, filters, dias, total }) => {
@@ -44,6 +82,19 @@ export default function Home() {
     setCarToReserve(null);          // cierra modal confirmar
     setReservaConfirmada(newReserva); // abre modal reserva confirmada
   };
+
+  if (loading) {
+    return (
+      <div className="bg-neutral-light min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="text-center py-12">
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
  // Renderizar página de inicio
   return (
     <div className="bg-neutral-light min-h-screen">
@@ -98,7 +149,7 @@ export default function Home() {
           </h2>
 
           <div className="grid grid-cols-2 gap-6">
-            {displayCars.map((car) => (
+            {cars.map((car) => (
               <CarCard
                 key={car.id}
                 car={car}
