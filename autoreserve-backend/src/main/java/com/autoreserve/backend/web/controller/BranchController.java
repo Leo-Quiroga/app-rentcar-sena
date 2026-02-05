@@ -29,6 +29,7 @@ public class BranchController {
                         branch.getAddress(),
                         branch.getCity(),
                         branch.getPhone(),
+                        branch.getImage(),
                         branch.getCars() != null ? branch.getCars().size() : 0
                 ))
                 .toList();
@@ -47,6 +48,7 @@ public class BranchController {
                 branch.getAddress(),
                 branch.getCity(),
                 branch.getPhone(),
+                branch.getImage(),
                 branch.getCars() != null ? branch.getCars().size() : 0
         );
         

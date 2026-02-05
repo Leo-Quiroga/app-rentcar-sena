@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/categories")
@@ -55,23 +56,32 @@ public class AdminCategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryResponse> createCategory(@Valid @RequestBody CategoryRequest request) {
-        Category category = new Category();
-        category.setName(request.getName());
-        category.setDescription(request.getDescription());
-        category.setImage(request.getImage());
+    public ResponseEntity<?> createCategory(@Valid @RequestBody CategoryRequest request) {
+        try {
+            Category category = new Category();
+            category.setName(request.getName());
+            category.setDescription(request.getDescription());
+            category.setImage(request.getImage());
 
-        Category saved = categoryRepository.save(category);
+            Category saved = categoryRepository.save(category);
 
-        CategoryResponse response = new CategoryResponse(
-                saved.getId(),
-                saved.getName(),
-                saved.getDescription(),
-                saved.getImage(),
-                0
-        );
+            CategoryResponse categoryData = new CategoryResponse(
+                    saved.getId(),
+                    saved.getName(),
+                    saved.getDescription(),
+                    saved.getImage(),
+                    0
+            );
 
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Categoría creada exitosamente",
+                    "data", categoryData
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}")
@@ -98,15 +108,27 @@ public class AdminCategoryController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+        try {
+            Category category = categoryRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + id));
 
-        if (category.getCars() != null && !category.getCars().isEmpty()) {
+            if (category.getCars() != null && !category.getCars().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "error", "No se puede eliminar una categoría que tiene autos asociados"));
+            }
+
+            categoryRepository.delete(category);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Categoría eliminada exitosamente",
+                    "deletedId", id
+            ));
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
-                    .body("No se puede eliminar una categoría que tiene autos asociados");
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
         }
-
-        categoryRepository.delete(category);
-        return ResponseEntity.ok("Categoría eliminada correctamente");
     }
 }

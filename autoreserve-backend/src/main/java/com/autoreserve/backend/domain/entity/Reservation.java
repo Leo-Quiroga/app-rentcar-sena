@@ -61,6 +61,39 @@ public class Reservation {
     private BigDecimal totalAmount;
 
     /**
+     * Sede de retiro del vehículo.
+     */
+    @ManyToOne
+    @JoinColumn(name = "pickup_branch_id")
+    private Branch pickupBranch;
+
+    /**
+     * Sede de entrega del vehículo.
+     */
+    @ManyToOne
+    @JoinColumn(name = "dropoff_branch_id")
+    private Branch dropoffBranch;
+
+    /**
+     * Estado del pago de la reserva.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentStatus paymentStatus;
+
+    /**
+     * Número total de días de la reserva.
+     */
+    @Column
+    private Integer totalDays;
+
+    /**
+     * Precio por día aplicado en esta reserva.
+     */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal pricePerDay;
+
+    /**
      * Constructor por defecto para JPA.
      */
     public Reservation() {
@@ -122,5 +155,45 @@ public class Reservation {
 
     public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public Branch getPickupBranch() {
+        return pickupBranch;
+    }
+
+    public void setPickupBranch(Branch pickupBranch) {
+        this.pickupBranch = pickupBranch;
+    }
+
+    public Branch getDropoffBranch() {
+        return dropoffBranch;
+    }
+
+    public void setDropoffBranch(Branch dropoffBranch) {
+        this.dropoffBranch = dropoffBranch;
+    }
+
+    public PaymentStatus getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(PaymentStatus paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public Integer getTotalDays() {
+        return totalDays;
+    }
+
+    public void setTotalDays(Integer totalDays) {
+        this.totalDays = totalDays;
+    }
+
+    public BigDecimal getPricePerDay() {
+        return pricePerDay;
+    }
+
+    public void setPricePerDay(BigDecimal pricePerDay) {
+        this.pricePerDay = pricePerDay;
     }
 }

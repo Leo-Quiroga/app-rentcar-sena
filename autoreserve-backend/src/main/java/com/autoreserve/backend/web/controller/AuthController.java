@@ -66,18 +66,18 @@ public class AuthController {
             // Validar formato de email
             if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("message", "El correo es requerido"));
+                        .body(Map.of("success", false, "error", "El correo es requerido"));
             }
 
             if (!EMAIL_PATTERN.matcher(request.getEmail()).matches()) {
                 return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                        .body(Map.of("message", "El formato del correo no es válido"));
+                        .body(Map.of("success", false, "error", "El formato del correo no es válido"));
             }
 
             // Validar contraseña
             if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("message", "La contraseña es requerida"));
+                        .body(Map.of("success", false, "error", "La contraseña es requerida"));
             }
 
             // Verificar si el usuario existe
@@ -86,7 +86,7 @@ public class AuthController {
 
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "Usuario no encontrado"));
+                        .body(Map.of("success", false, "error", "Usuario no encontrado"));
             }
 
             // Intentar autenticación
@@ -102,24 +102,28 @@ public class AuthController {
                     user.getRole().getName()
             );
 
-            LoginResponse response = new LoginResponse(
+            LoginResponse loginData = new LoginResponse(
                     user.getId(),
                     user.getEmail(),
                     user.getRole().getName(),
                     token
             );
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Inicio de sesión exitoso",
+                    "data", loginData
+            ));
 
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Contraseña incorrecta"));
+                    .body(Map.of("success", false, "error", "Contraseña incorrecta"));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Credenciales incorrectas"));
+                    .body(Map.of("success", false, "error", "Credenciales incorrectas"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error interno del servidor"));
+                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
         }
     }
 
@@ -132,12 +136,12 @@ public class AuthController {
             // Validar formato de email
             if (!EMAIL_PATTERN.matcher(request.getEmail()).matches()) {
                 return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                        .body(Map.of("message", "El formato del correo no es válido"));
+                        .body(Map.of("success", false, "error", "El formato del correo no es válido"));
             }
 
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(Map.of("message", "El correo ya está registrado"));
+                        .body(Map.of("success", false, "error", "El correo ya está registrado"));
             }
 
             Role clientRole = roleRepository.findByName("CLIENT")
@@ -158,17 +162,23 @@ public class AuthController {
                     clientRole.getName()
             );
 
+            LoginResponse loginData = new LoginResponse(
+                    user.getId(),
+                    user.getEmail(),
+                    clientRole.getName(),
+                    token
+            );
+
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new LoginResponse(
-                            user.getId(),
-                            user.getEmail(),
-                            clientRole.getName(),
-                            token
+                    .body(Map.of(
+                            "success", true,
+                            "message", "Usuario registrado exitosamente",
+                            "data", loginData
                     ));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Error interno del servidor"));
+                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
         }
     }
 }

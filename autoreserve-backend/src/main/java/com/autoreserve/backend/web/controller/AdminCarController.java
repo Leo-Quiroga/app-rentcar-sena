@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/cars")
@@ -45,7 +46,7 @@ public class AdminCarController {
                         car.getStatus().name(),
                         car.getCategory().getName(),
                         car.getBranch().getName(),
-                        null // image por ahora
+                        car.getImage()
                 ))
                 .toList();
         
@@ -67,46 +68,59 @@ public class AdminCarController {
                 car.getStatus().name(),
                 car.getCategory().getName(),
                 car.getBranch().getName(),
-                null
+                car.getImage()
         );
         
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
-    public ResponseEntity<CarResponse> createCar(@Valid @RequestBody CarRequest request) {
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
-        
-        Branch branch = branchRepository.findById(request.getBranchId())
-                .orElseThrow(() -> new RuntimeException("Sede no encontrada"));
+    public ResponseEntity<?> createCar(@Valid @RequestBody CarRequest request) {
+        try {
+            Category category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + request.getCategoryId()));
+            
+            Branch branch = branchRepository.findById(request.getBranchId())
+                    .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + request.getBranchId()));
 
-        Car car = new Car();
-        car.setBrand(request.getBrand());
-        car.setModel(request.getModel());
-        car.setYear(request.getYear());
-        car.setPlate(request.getPlate());
-        car.setPricePerDay(request.getPricePerDay());
-        car.setStatus(CarStatus.AVAILABLE);
-        car.setCategory(category);
-        car.setBranch(branch);
+            Car car = new Car();
+            car.setBrand(request.getBrand());
+            car.setModel(request.getModel());
+            car.setYear(request.getYear());
+            car.setPlate(request.getPlate());
+            car.setPricePerDay(request.getPricePerDay());
+            car.setStatus(CarStatus.AVAILABLE);
+            car.setCategory(category);
+            car.setBranch(branch);
+            car.setImage(request.getImage());
 
-        Car saved = carRepository.save(car);
+            Car saved = carRepository.save(car);
 
-        CarResponse response = new CarResponse(
-                saved.getId(),
-                saved.getBrand(),
-                saved.getModel(),
-                saved.getYear(),
-                saved.getPlate(),
-                saved.getPricePerDay(),
-                saved.getStatus().name(),
-                saved.getCategory().getName(),
-                saved.getBranch().getName(),
-                null
-        );
+            CarResponse response = new CarResponse(
+                    saved.getId(),
+                    saved.getBrand(),
+                    saved.getModel(),
+                    saved.getYear(),
+                    saved.getPlate(),
+                    saved.getPricePerDay(),
+                    saved.getStatus().name(),
+                    saved.getCategory().getName(),
+                    saved.getBranch().getName(),
+                    saved.getImage()
+            );
 
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Auto creado exitosamente",
+                    "data", response
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}")
@@ -127,6 +141,7 @@ public class AdminCarController {
         car.setPricePerDay(request.getPricePerDay());
         car.setCategory(category);
         car.setBranch(branch);
+        car.setImage(request.getImage());
 
         Car updated = carRepository.save(car);
 
@@ -140,7 +155,7 @@ public class AdminCarController {
                 updated.getStatus().name(),
                 updated.getCategory().getName(),
                 updated.getBranch().getName(),
-                null
+                updated.getImage()
         );
 
         return ResponseEntity.ok(response);
@@ -148,10 +163,22 @@ public class AdminCarController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCar(@PathVariable Long id) {
-        Car car = carRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Auto no encontrado"));
+        try {
+            Car car = carRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Auto no encontrado con ID: " + id));
 
-        carRepository.delete(car);
-        return ResponseEntity.ok("Auto eliminado correctamente");
+            carRepository.delete(car);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Auto eliminado exitosamente",
+                    "deletedId", id
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
+        }
     }
 }

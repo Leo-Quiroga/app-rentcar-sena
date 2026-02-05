@@ -4,9 +4,10 @@ import com.autoreserve.backend.domain.entity.*;
 import com.autoreserve.backend.domain.repository.*;
 import com.autoreserve.backend.dto.reservation.*;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -15,8 +16,9 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/reservations")
-public class ReservationController {
+@RequestMapping("/api/admin/reservations")
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminReservationController {
 
     private final ReservationRepository reservationRepository;
     private final CarRepository carRepository;
@@ -24,27 +26,25 @@ public class ReservationController {
 
     private final BranchRepository branchRepository;
 
-    public ReservationController(ReservationRepository reservationRepository, 
-                               CarRepository carRepository, 
-                               UserRepository userRepository,
-                               BranchRepository branchRepository) {
+    public AdminReservationController(ReservationRepository reservationRepository, 
+                                    CarRepository carRepository, 
+                                    UserRepository userRepository,
+                                    BranchRepository branchRepository) {
         this.reservationRepository = reservationRepository;
         this.carRepository = carRepository;
         this.userRepository = userRepository;
         this.branchRepository = branchRepository;
     }
 
-    @GetMapping("/my")
-    public ResponseEntity<?> getMyReservations(
-            @AuthenticationPrincipal UserDetails principal) {
+    @GetMapping
+    public ResponseEntity<?> getAllReservations(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
         
         try {
-            User user = userRepository.findByEmail(principal.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            Page<Reservation> reservationPage = reservationRepository.findAll(PageRequest.of(page, size));
             
-            List<Reservation> reservations = reservationRepository.findByUserOrderByStartDateDesc(user);
-            
-            List<ReservationResponse> responses = reservations.stream()
+            List<ReservationResponse> responses = reservationPage.getContent().stream()
                     .map(reservation -> new ReservationResponse(
                             reservation.getId(),
                             reservation.getCar().getId(),
@@ -74,64 +74,6 @@ public class ReservationController {
                     "message", "Reservas obtenidas exitosamente",
                     "data", responses
             ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
-        }
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getReservationById(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails principal) {
-        
-        try {
-            User user = userRepository.findByEmail(principal.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            
-            Reservation reservation = reservationRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
-            
-            // Verificar que la reserva pertenece al usuario
-            if (!reservation.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("success", false, "error", "No tienes permisos para ver esta reserva"));
-            }
-            
-            ReservationResponse response = new ReservationResponse(
-                    reservation.getId(),
-                    reservation.getCar().getId(),
-                    reservation.getCar().getBrand(),
-                    reservation.getCar().getModel(),
-                    reservation.getCar().getYear(),
-                    reservation.getCar().getImage(),
-                    reservation.getCar().getCategory().getName(),
-                    reservation.getStartDate(),
-                    reservation.getEndDate(),
-                    reservation.getStatus().name(),
-                    reservation.getPaymentStatus().name(),
-                    reservation.getTotalAmount(),
-                    reservation.getTotalDays(),
-                    reservation.getPricePerDay(),
-                    reservation.getPickupBranch() != null ? reservation.getPickupBranch().getName() : "No especificada",
-                    reservation.getDropoffBranch() != null ? reservation.getDropoffBranch().getName() : "No especificada",
-                    reservation.getUser().getId(),
-                    reservation.getUser().getFirstName(),
-                    reservation.getUser().getLastName(),
-                    reservation.getUser().getEmail()
-            );
-            
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Reserva obtenida exitosamente",
-                    "data", response
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
@@ -139,28 +81,25 @@ public class ReservationController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createReservation(
-            @Valid @RequestBody ReservationRequest request,
-            @AuthenticationPrincipal UserDetails principal) {
-        
+    public ResponseEntity<?> createReservationForClient(@Valid @RequestBody AdminReservationRequest request) {
         try {
-            User user = userRepository.findByEmail(principal.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            User user = userRepository.findById(request.getUserId())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + request.getUserId()));
             
             Car car = carRepository.findById(request.getCarId())
                     .orElseThrow(() -> new RuntimeException("Auto no encontrado con ID: " + request.getCarId()));
-            
-            Branch pickupBranch = branchRepository.findById(request.getPickupBranchId())
-                    .orElseThrow(() -> new RuntimeException("Sede de retiro no encontrada"));
-            
-            Branch dropoffBranch = branchRepository.findById(request.getDropoffBranchId())
-                    .orElseThrow(() -> new RuntimeException("Sede de entrega no encontrada"));
             
             // Verificar disponibilidad del auto
             if (car.getStatus() != CarStatus.AVAILABLE) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("success", false, "error", "El auto no está disponible para reserva"));
             }
+            
+            Branch pickupBranch = branchRepository.findById(request.getPickupBranchId())
+                    .orElseThrow(() -> new RuntimeException("Sede de retiro no encontrada"));
+            
+            Branch dropoffBranch = branchRepository.findById(request.getDropoffBranchId())
+                    .orElseThrow(() -> new RuntimeException("Sede de entrega no encontrada"));
             
             // Calcular total
             long days = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate());
@@ -211,7 +150,7 @@ public class ReservationController {
             
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "Reserva creada exitosamente",
+                    "message", "Reserva creada exitosamente para el cliente",
                     "data", response
             ));
         } catch (RuntimeException e) {
@@ -223,37 +162,28 @@ public class ReservationController {
         }
     }
 
-    @PutMapping("/{id}/cancel")
-    public ResponseEntity<?> cancelReservation(
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateReservationStatus(
             @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails principal) {
+            @RequestParam String status) {
         
         try {
-            User user = userRepository.findByEmail(principal.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            
             Reservation reservation = reservationRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Reserva no encontrada con ID: " + id));
             
-            // Verificar que la reserva pertenece al usuario
-            if (!reservation.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("success", false, "error", "No tienes permisos para cancelar esta reserva"));
-            }
-            
-            if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("success", false, "error", "Solo se pueden cancelar reservas confirmadas"));
-            }
-            
-            reservation.setStatus(ReservationStatus.CANCELLED);
+            ReservationStatus newStatus = ReservationStatus.valueOf(status.toUpperCase());
+            reservation.setStatus(newStatus);
             reservationRepository.save(reservation);
             
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "Reserva cancelada exitosamente",
-                    "reservationId", id
+                    "message", "Estado de reserva actualizado exitosamente",
+                    "reservationId", id,
+                    "newStatus", newStatus.name()
             ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "Estado de reserva inválido: " + status));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("success", false, "error", e.getMessage()));

@@ -1,9 +1,10 @@
 // Pantalla de administración de categorías para el administrador
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { getAdminCategories, deleteCategory } from "../api/adminCategoriesApi";
 
 export default function AdminCategories() {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -71,7 +72,15 @@ export default function AdminCategories() {
   return (
     <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">📂 Administración de Categorías</h1>
+        <div>
+          <button 
+            onClick={() => navigate('/admin')}
+            className="text-primary hover:underline mb-2 text-sm"
+          >
+            ← Volver al Dashboard
+          </button>
+          <h1 className="text-2xl font-bold text-neutral-dark">📂 Administración de Categorías</h1>
+        </div>
         <Link
           to="/admin/categorias/nueva"
           className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"

@@ -4,8 +4,8 @@ package com.autoreserve.backend.domain.entity;
  * Permite controlar la lógica de negocio, la disponibilidad del vehículo y los procesos de facturación.
  */
 public enum ReservationStatus {
-    PENDING,
     CONFIRMED,
-    CANCELLED
+    CANCELLED,
+    COMPLETED
 }
 

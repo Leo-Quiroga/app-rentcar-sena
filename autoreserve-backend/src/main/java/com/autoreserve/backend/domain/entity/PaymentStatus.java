@@ -1,10 +1,10 @@
 package com.autoreserve.backend.domain.entity;
+
 /**
- * Enumeración que representa los estados posibles de una transacción de pago.
- * Define el ciclo de vida y la validez financiera de una reserva en el sistema.
+ * Estados de pago de una reserva
  */
 public enum PaymentStatus {
-    SUCCESS,
-    FAILED,
-    PENDING
+    PENDING,    // Pendiente de pago
+    PAID,       // Pagado
+    REFUNDED    // Reembolsado
 }

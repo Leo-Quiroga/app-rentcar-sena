@@ -72,6 +72,12 @@ public class Car {
     private Branch branch;
 
     /**
+     * URL de la imagen representativa del vehículo.
+     */
+    @Column(length = 500)
+    private String image;
+
+    /**
      * Listado histórico y futuro de reservas asociadas a este vehículo.
      */
     @OneToMany(mappedBy = "car")
@@ -155,6 +161,14 @@ public class Car {
 
     public void setBranch(Branch branch) {
         this.branch = branch;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public List<Reservation> getReservations() {

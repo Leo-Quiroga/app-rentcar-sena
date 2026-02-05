@@ -74,7 +74,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Define rutas públicas exentas de autenticación
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/cars/**").permitAll()
+                        .requestMatchers("/api/categories/**").permitAll()
+                        .requestMatchers("/api/branches/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // Endpoints de perfil propio - cualquier usuario autenticado
+                        .requestMatchers("/api/admin/users/me").authenticated()
                         // Cualquier otra petición requiere autenticación previa
                         .anyRequest().authenticated()
                 )

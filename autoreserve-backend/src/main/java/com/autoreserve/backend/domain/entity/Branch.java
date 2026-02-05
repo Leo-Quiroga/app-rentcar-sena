@@ -43,6 +43,12 @@ public class Branch {
     private String phone;
 
     /**
+     * URL de la imagen representativa de la sede.
+     */
+    @Column(length = 500)
+    private String image;
+
+    /**
      * Relación uno a muchos con la entidad Car.
      * Representa el inventario de vehículos asociados a esta sede específica.
      */
@@ -95,6 +101,14 @@ public class Branch {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public List<Car> getCars() {

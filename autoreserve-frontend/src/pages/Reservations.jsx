@@ -1,9 +1,10 @@
 // Página de reservas
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getMyReservations } from "../api/reservationsApi";
 
 export default function Reservations() {
+  const navigate = useNavigate();
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,7 +51,15 @@ export default function Reservations() {
   // Renderizar lista de reservas
   return (
     <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold mb-6">📅 Mis Reservas</h1>
+      <div className="mb-6">
+        <button 
+          onClick={() => navigate('/perfil')}
+          className="text-primary hover:underline mb-4"
+        >
+          ← Volver al Perfil
+        </button>
+        <h1 className="text-2xl font-bold">📅 Mis Reservas</h1>
+      </div>
 
       {reservations.length === 0 ? (
         <p className="text-gray-600">No tienes reservas todavía.</p>
@@ -83,12 +92,12 @@ export default function Reservations() {
                 </p>
               </div>
 
-              <Link
-                to={`/reservas/${reserva.id}`}
+              <button
+                onClick={() => navigate(`/reservas/${reserva.id}`)}
                 className="text-sm px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition"
               >
                 Ver detalle
-              </Link>
+              </button>
             </div>
           ))}
         </div>

@@ -16,6 +16,8 @@ public class BranchRequest {
     
     @Size(max = 30)
     private String phone;
+    
+    private String image;
 
     public BranchRequest() {}
 
@@ -30,4 +32,7 @@ public class BranchRequest {
     
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+    
+    public String getImage() { return image; }
+    public void setImage(String image) { this.image = image; }
 }

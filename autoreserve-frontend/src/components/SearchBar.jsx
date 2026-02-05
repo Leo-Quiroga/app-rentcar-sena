@@ -1,6 +1,6 @@
 // Componente SearchBar con autocompletado para ciudades
-import { useState } from "react";
-import { cities } from "../data/mockCities";
+import { useState, useEffect } from "react";
+import { getCitiesWithBranches } from "../api/searchApi";
 
 export default function SearchBar({ onSearch }) {
   const [pickupCity, setPickupCity] = useState("");
@@ -8,6 +8,20 @@ export default function SearchBar({ onSearch }) {
   const [sameCity, setSameCity] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [cities, setCities] = useState([]);
+
+  // Cargar ciudades con sedes activas
+  useEffect(() => {
+    const loadCities = async () => {
+      try {
+        const activeCities = await getCitiesWithBranches();
+        setCities(activeCities);
+      } catch (error) {
+        console.error('Error cargando ciudades:', error);
+      }
+    };
+    loadCities();
+  }, []);
 
   // Estados para sugerencias
   const [suggestionsPickup, setSuggestionsPickup] = useState([]);
@@ -120,32 +134,19 @@ export default function SearchBar({ onSearch }) {
       >
         {/* Ciudad de retiro */}
         <div className="relative flex-1">
-          <input
-            type="text"
-            placeholder="Ciudad de retiro"
+          <select
             value={pickupCity}
-            onChange={handleChangePickup}
-            onKeyDown={handleKeyDownPickup}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
-          {suggestionsPickup.length > 0 && (
-            <ul className="absolute z-10 bg-white border border-gray-300 rounded w-full mt-1 max-h-40 overflow-y-auto">
-              {suggestionsPickup.map((city, idx) => (
-                <li
-                  key={city}
-                  onMouseDown={() => {
-                    setPickupCity(city);
-                    setSuggestionsPickup([]);
-                  }}
-                  className={`px-3 py-2 cursor-pointer ${
-                    idx === activePickupIndex ? "bg-gray-200" : "hover:bg-gray-100"
-                  }`}
-                >
-                  {city}
-                </li>
-              ))}
-            </ul>
-          )}
+            onChange={(e) => setPickupCity(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2 appearance-none bg-white"
+            required
+          >
+            <option value="">Selecciona ciudad de retiro</option>
+            {cities.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Checkbox entrega misma ciudad */}
@@ -165,32 +166,19 @@ export default function SearchBar({ onSearch }) {
         {/* Ciudad de entrega */}
         {!sameCity && (
           <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="Ciudad de entrega"
+            <select
               value={dropoffCity}
-              onChange={handleChangeDropoff}
-              onKeyDown={handleKeyDownDropoff}
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            />
-            {suggestionsDropoff.length > 0 && (
-              <ul className="absolute z-10 bg-white border border-gray-300 rounded w-full mt-1 max-h-40 overflow-y-auto">
-                {suggestionsDropoff.map((city, idx) => (
-                  <li
-                    key={city}
-                    onMouseDown={() => {
-                      setDropoffCity(city);
-                      setSuggestionsDropoff([]);
-                    }}
-                    className={`px-3 py-2 cursor-pointer ${
-                      idx === activeDropoffIndex ? "bg-gray-200" : "hover:bg-gray-100"
-                    }`}
-                  >
-                    {city}
-                  </li>
-                ))}
-              </ul>
-            )}
+              onChange={(e) => setDropoffCity(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 appearance-none bg-white"
+              required
+            >
+              <option value="">Selecciona ciudad de entrega</option>
+              {cities.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
@@ -198,15 +186,19 @@ export default function SearchBar({ onSearch }) {
         <input
           type="date"
           value={startDate}
+          min={new Date().toISOString().split('T')[0]}
           onChange={(e) => setStartDate(e.target.value)}
           className="border border-gray-300 rounded px-3 py-2"
+          required
         />
 
         <input
           type="date"
           value={endDate}
+          min={startDate || new Date().toISOString().split('T')[0]}
           onChange={(e) => setEndDate(e.target.value)}
           className="border border-gray-300 rounded px-3 py-2"
+          required
         />
 
         {/* Botón */}

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/favorites")
@@ -59,26 +60,38 @@ public class FavoriteController {
             @RequestParam Long carId,
             @AuthenticationPrincipal UserDetails principal) {
         
-        User user = userRepository.findByEmail(principal.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
-        Car car = carRepository.findById(carId)
-                .orElseThrow(() -> new RuntimeException("Auto no encontrado"));
-        
-        // Verificar si ya existe en favoritos
-        if (favoriteRepository.findByUserAndCar(user, car).isPresent()) {
+        try {
+            User user = userRepository.findByEmail(principal.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            Car car = carRepository.findById(carId)
+                    .orElseThrow(() -> new RuntimeException("Auto no encontrado con ID: " + carId));
+            
+            // Verificar si ya existe en favoritos
+            if (favoriteRepository.findByUserAndCar(user, car).isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "error", "El auto ya está en tu lista de favoritos"));
+            }
+            
+            Favorite favorite = new Favorite();
+            favorite.setUser(user);
+            favorite.setCar(car);
+            favorite.setCreatedAt(LocalDateTime.now());
+            
+            favoriteRepository.save(favorite);
+            
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Auto agregado a favoritos exitosamente",
+                    "carId", carId
+            ));
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
-                    .body("El auto ya está en favoritos");
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
         }
-        
-        Favorite favorite = new Favorite();
-        favorite.setUser(user);
-        favorite.setCar(car);
-        favorite.setCreatedAt(LocalDateTime.now());
-        
-        favoriteRepository.save(favorite);
-        
-        return ResponseEntity.ok("Auto agregado a favoritos");
     }
 
     @DeleteMapping("/{carId}")
@@ -86,17 +99,29 @@ public class FavoriteController {
             @PathVariable Long carId,
             @AuthenticationPrincipal UserDetails principal) {
         
-        User user = userRepository.findByEmail(principal.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
-        Car car = carRepository.findById(carId)
-                .orElseThrow(() -> new RuntimeException("Auto no encontrado"));
-        
-        Favorite favorite = favoriteRepository.findByUserAndCar(user, car)
-                .orElseThrow(() -> new RuntimeException("Favorito no encontrado"));
-        
-        favoriteRepository.delete(favorite);
-        
-        return ResponseEntity.ok("Auto removido de favoritos");
+        try {
+            User user = userRepository.findByEmail(principal.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            Car car = carRepository.findById(carId)
+                    .orElseThrow(() -> new RuntimeException("Auto no encontrado con ID: " + carId));
+            
+            Favorite favorite = favoriteRepository.findByUserAndCar(user, car)
+                    .orElseThrow(() -> new RuntimeException("El auto no está en tu lista de favoritos"));
+            
+            favoriteRepository.delete(favorite);
+            
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Auto removido de favoritos exitosamente",
+                    "carId", carId
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
+        }
     }
 }

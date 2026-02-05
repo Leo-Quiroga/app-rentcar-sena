@@ -2,12 +2,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyProfile } from "../api/userApi";
+import { useAuth } from "../auth/AuthContext";
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const isAdmin = user?.role === 'ADMIN';
 
   // Mantenemos tu lógica de formateo intacta
   const formatDate = (isoDate) => {
@@ -151,7 +155,11 @@ export default function Profile() {
 
             {/* Accesos Rápidos Estilo Tarjetas */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4">
-              <QuickLink label="Mis Reservas" path="/reservas" />
+              {isAdmin ? (
+                <QuickLink label="Reservas" path="/admin/reservas" />
+              ) : (
+                <QuickLink label="Mis Reservas" path="/reservas" />
+              )}
               <QuickLink label="Favoritos" path="/favoritos" />
               <QuickLink label="Seguridad" path="/cambiar-password" />
             </div>

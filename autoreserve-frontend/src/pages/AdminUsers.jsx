@@ -1,9 +1,10 @@
 // Página de administración de usuarios
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getUsers, deleteUser } from "../api/adminUsersApi";
 
 export default function AdminUsers() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -71,13 +72,21 @@ export default function AdminUsers() {
   return (
     <div className="w-full max-w-[1400px] mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800 tracking-tight">👥 Gestión de Usuarios</h1>
-        <Link
-          to="/admin/usuarios/nuevo"
+        <div>
+          <button 
+            onClick={() => navigate('/admin')}
+            className="text-primary hover:underline mb-2 text-sm"
+          >
+            ← Volver al Dashboard
+          </button>
+          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">👥 Gestión de Usuarios</h1>
+        </div>
+        <button
+          onClick={() => navigate('/admin/usuarios/nuevo')}
           className="w-full sm:w-auto text-center px-6 py-2.5 bg-primary text-white font-semibold rounded shadow-sm hover:bg-primary-dark transition-all"
         >
           ➕ Nuevo Usuario
-        </Link>
+        </button>
       </header>
 
       {/* --- VISTA MÓVIL (Cards) --- */}
@@ -105,7 +114,7 @@ export default function AdminUsers() {
               </div>
             </div>
             <div className="flex gap-2 pt-2">
-              <Link to={`/admin/usuarios/${user.id}/editar`} className="flex-1 text-center py-2 border border-primary text-primary rounded font-bold text-sm hover:bg-primary hover:text-white transition-colors">Editar</Link>
+              <button onClick={() => navigate(`/admin/usuarios/${user.id}/editar`)} className="flex-1 text-center py-2 border border-primary text-primary rounded font-bold text-sm hover:bg-primary hover:text-white transition-colors">Editar</button>
               <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)} className="flex-1 py-2 border border-red-600 text-red-600 rounded font-bold text-sm hover:bg-red-600 hover:text-white transition-colors">Eliminar</button>
             </div>
           </div>
@@ -162,7 +171,7 @@ export default function AdminUsers() {
 
                 <td className="px-4 py-4">
                   <div className="flex flex-col lg:flex-row justify-center items-center gap-2">
-                    <Link to={`/admin/usuarios/${user.id}/editar`} className="w-full lg:w-20 py-1.5 text-center border border-primary text-primary rounded text-[11px] font-bold hover:bg-primary hover:text-white transition-all shadow-sm uppercase">Editar</Link>
+                    <button onClick={() => navigate(`/admin/usuarios/${user.id}/editar`)} className="w-full lg:w-20 py-1.5 text-center border border-primary text-primary rounded text-[11px] font-bold hover:bg-primary hover:text-white transition-all shadow-sm uppercase">Editar</button>
                     <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)} className="w-full lg:w-20 py-1.5 text-center border border-red-600 text-red-600 rounded text-[11px] font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm uppercase">Borrar</button>
                   </div>
                 </td>

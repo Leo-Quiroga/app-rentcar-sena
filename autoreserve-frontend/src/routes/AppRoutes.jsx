@@ -41,6 +41,8 @@ import AdminUsers from "../pages/AdminUsers";
 import AdminUserForm from "../pages/AdminUserForm";
 import AdminSedes from "../pages/AdminSedes";
 import AdminSedeForm from "../pages/AdminSedeForm";
+import AdminReservations from "../pages/AdminReservations";
+import AllReservations from "../pages/AllReservations";
 
 // Soporte y legales
 import Contact from "../pages/Contact";
@@ -342,6 +344,16 @@ export default function AppRoutes() {
           <MainLayout>
             <AdminSedeForm />
           </MainLayout>
+        }
+      />
+      <Route
+        path="/admin/reservas"
+        element={
+          <AdminRoute>
+            <MainLayout>
+              <AdminReservations />
+            </MainLayout>
+          </AdminRoute>
         }
       />
 

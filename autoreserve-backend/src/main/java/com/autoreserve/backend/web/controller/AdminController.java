@@ -1,6 +1,7 @@
 package com.autoreserve.backend.web.controller;
 
 import com.autoreserve.backend.domain.repository.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,33 +32,31 @@ public class AdminController {
     }
 
     /**
-     * Endpoint de prueba para verificar la correcta configuración del RBAC (Control de Acceso Basado en Roles).
-     * Requiere que el usuario autenticado posea el rol 'ADMIN'.
-     */
-    @GetMapping("/dashboard")
-    @PreAuthorize("hasRole('ADMIN')")
-    public String adminDashboard() {
-        return "Welcome ADMIN, RBAC is working!";
-    }
-
-    /**
      * Estadísticas del dashboard administrativo
      */
     @GetMapping("/stats")
     @PreAuthorize("hasRole('ADMIN')")
-    public Map<String, Object> getStats() {
-        long totalUsers = userRepository.count();
-        long totalCars = carRepository.count();
-        long totalReservations = reservationRepository.count();
-        long totalCategories = categoryRepository.count();
-        long totalBranches = branchRepository.count();
+    public ResponseEntity<Map<String, Object>> getStats() {
+        try {
+            long totalUsers = userRepository.count();
+            long totalCars = carRepository.count();
+            long totalReservations = reservationRepository.count();
+            long totalCategories = categoryRepository.count();
+            long totalBranches = branchRepository.count();
 
-        return Map.of(
-                "totalUsers", totalUsers,
-                "totalCars", totalCars,
-                "totalReservations", totalReservations,
-                "totalCategories", totalCategories,
-                "totalBranches", totalBranches
-        );
+            Map<String, Object> stats = Map.of(
+                    "totalUsers", totalUsers,
+                    "totalCars", totalCars,
+                    "totalReservations", totalReservations,
+                    "totalCategories", totalCategories,
+                    "totalBranches", totalBranches,
+                    "message", "Estadísticas obtenidas exitosamente"
+            );
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error al obtener las estadísticas", "details", e.getMessage()));
+        }
     }
 }

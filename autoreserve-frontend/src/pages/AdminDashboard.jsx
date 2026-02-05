@@ -126,11 +126,11 @@ export default function AdminDashboard() {
           </Link>
 
           <Link
-            to="/reservas"
+            to="/admin/reservas"
             className="bg-white shadow rounded-lg p-6 flex flex-col items-center hover:bg-gray-50 transition"
           >
             <span className="text-4xl mb-2">📅</span>
-            <p className="text-lg font-semibold">Reservas</p>
+            <p className="text-lg font-semibold">Gestor de Reservas</p>
           </Link>
 
           <Link

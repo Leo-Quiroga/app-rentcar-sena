@@ -1,10 +1,11 @@
 // Página de administración de sedes
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getAdminBranches, deleteBranch } from "../api/adminBranchesApi";
 
 // Renderizar lista de sedes con opciones para editar o eliminar
 export default function AdminSedes() {
+  const navigate = useNavigate();
   const [sedes, setSedes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -72,7 +73,15 @@ export default function AdminSedes() {
   return (
     <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">🏢 Gestión de Sedes</h1>
+        <div>
+          <button 
+            onClick={() => navigate('/admin')}
+            className="text-primary hover:underline mb-2 text-sm"
+          >
+            ← Volver al Dashboard
+          </button>
+          <h1 className="text-2xl font-bold">🏢 Gestión de Sedes</h1>
+        </div>
         <Link
           to="/admin/sedes/nuevo"
           className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition"

@@ -3,8 +3,11 @@ package com.autoreserve.backend.dto.reservation;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
-public class ReservationRequest {
-    @NotNull(message = "El auto es requerido")
+public class AdminReservationRequest {
+    @NotNull(message = "El ID del usuario es requerido")
+    private Long userId;
+    
+    @NotNull(message = "El ID del auto es requerido")
     private Long carId;
     
     @NotNull(message = "La fecha de inicio es requerida")
@@ -19,8 +22,11 @@ public class ReservationRequest {
     @NotNull(message = "La sede de entrega es requerida")
     private Long dropoffBranchId;
 
-    public ReservationRequest() {}
+    public AdminReservationRequest() {}
 
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+    
     public Long getCarId() { return carId; }
     public void setCarId(Long carId) { this.carId = carId; }
     

@@ -5,3 +5,6 @@ import { AuthContext } from "./AuthContext";
 export function useAuth() {
   return useContext(AuthContext);
 }
+
+// Exportar también como default
+export default useAuth;
