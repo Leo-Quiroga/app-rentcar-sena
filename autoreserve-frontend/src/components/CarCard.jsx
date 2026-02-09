@@ -1,7 +1,13 @@
 // Componente para mostrar una tarjeta de auto
+import { getImageUrl } from '../utils/imageUtils';
+
 export default function CarCard({ car, onDetail, onReserve, canReserve = false }) {
   const price = car?.pricePerDay ?? car?.price ?? null;
   const rating = car?.rating ?? 0;
+  
+  // Manejar diferentes estructuras de datos
+  const carName = car?.name || (car?.brand && car?.model ? `${car.brand} ${car.model}` : "Auto sin nombre");
+  const carCategory = car?.category || car?.categoryName || "Sin categoría";
 
   // Generar estrellas dinámicas (máx 5)
   const stars = Array.from({ length: 5 }, (_, i) => (
@@ -14,18 +20,21 @@ export default function CarCard({ car, onDetail, onReserve, canReserve = false }
     <article className="bg-white shadow-md rounded-lg overflow-hidden flex flex-col transition hover:shadow-lg">
       {/* Imagen */}
       <img
-        src={car?.image || "/src/assets/placeholder-car.jpg"}
-        alt={car?.name ? `Imagen del auto ${car.name}` : "Auto disponible"}
+        src={getImageUrl(car?.image, 'car')}
+        alt={carName ? `Imagen del auto ${carName}` : "Auto disponible"}
         className="h-40 w-full object-cover"
+        onError={(e) => {
+          e.target.src = getImageUrl(null, 'car');
+        }}
       />
 
       {/* Contenido */}
       <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
           <h3 className="text-base sm:text-lg font-semibold text-neutral-dark">
-            {car?.name || "Auto sin nombre"}
+            {carName}
           </h3>
-          <p className="text-sm text-gray-500">{car?.category || "Sin categoría"}</p>
+          <p className="text-sm text-gray-500">{carCategory}</p>
 
           {/* Rating */}
           <div className="flex items-center text-sm mt-1">
@@ -43,7 +52,7 @@ export default function CarCard({ car, onDetail, onReserve, canReserve = false }
         <div className="mt-4 flex gap-2">
           <button
             onClick={() => onDetail && onDetail(car)}
-            aria-label={`Ver más detalles de ${car?.name}`}
+            aria-label={`Ver más detalles de ${carName}`}
             className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs sm:text-sm py-2 px-3 rounded-md transition"
           >
             Ver más
@@ -52,7 +61,7 @@ export default function CarCard({ car, onDetail, onReserve, canReserve = false }
           <button
             onClick={() => canReserve && onReserve && onReserve(car)}
             disabled={!canReserve}
-            aria-label={`Reservar ${car?.name}`}
+            aria-label={`Reservar ${carName}`}
             className={`flex-1 text-xs sm:text-sm py-2 px-3 rounded-md transition ${
               canReserve
                 ? "bg-primary hover:bg-primary-dark text-white"

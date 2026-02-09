@@ -54,7 +54,7 @@ public class CarController {
                         car.getStatus().name(),
                         car.getCategory().getName(),
                         car.getBranch().getName(),
-                        null
+                        car.getImage()
                 ))
                 .toList();
         
@@ -76,7 +76,7 @@ public class CarController {
                 car.getStatus().name(),
                 car.getCategory().getName(),
                 car.getBranch().getName(),
-                null
+                car.getImage()
         );
         
         return ResponseEntity.ok(response);

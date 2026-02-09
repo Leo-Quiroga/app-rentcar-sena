@@ -11,3 +11,9 @@ export function getBranches() {
 export function getBranchById(id) {
   return apiFetch(`/api/branches/${id}`);
 }
+
+// Objeto API para compatibilidad
+export const branchesApi = {
+  getAll: getBranches,
+  getById: getBranchById
+};

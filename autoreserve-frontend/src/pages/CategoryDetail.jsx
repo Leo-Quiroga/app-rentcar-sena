@@ -2,6 +2,7 @@
 import { useParams, Link } from "react-router-dom";
 import { categories, cars } from "../data/mockData";
 import CarCard from "../components/CarCard";
+import { getImageUrl } from "../utils/imageUtils";
 
 export default function CategoryDetail() {
   const { id } = useParams();
@@ -28,9 +29,12 @@ export default function CategoryDetail() {
     <div className="space-y-6">
       <header className="flex items-center gap-4">
         <img
-          src={category.image}
+          src={getImageUrl(category.image, 'category')}
           alt={`Imagen de la categoría ${category.name}`}
           className="h-20 object-cover rounded"
+          onError={(e) => {
+            e.target.src = getImageUrl(null, 'category');
+          }}
         />
         <div>
           <h1 className="text-3xl font-bold">{category.name}</h1>

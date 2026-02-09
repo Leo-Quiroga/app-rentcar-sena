@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getImageUrl } from '../utils/imageUtils';
 // Componente para mostrar una tarjeta de categoría
 export default function CategoryCard({ category, onSelect }) {
   return (
@@ -10,9 +11,12 @@ export default function CategoryCard({ category, onSelect }) {
         aria-label={`Ver más sobre categoría ${category.name}`}
       >
         <img
-          src={category.image}
+          src={getImageUrl(category.image, 'category')}
           alt={`Categoría ${category.name}`}
           className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = getImageUrl(null, 'category');
+          }}
         />
       </Link>
 
