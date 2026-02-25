@@ -34,7 +34,7 @@ public class Car {
     /**
      * Año de fabricación del vehículo.
      */
-    @Column
+    @Column(name = "`year`")
     private Integer year;
 
     /**

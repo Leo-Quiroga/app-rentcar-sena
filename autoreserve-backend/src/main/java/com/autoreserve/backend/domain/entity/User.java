@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  * con el sistema de permisos a través de roles.
  */
 @Entity
-@Table(name = "user")
+@Table(name = "`user`")
 public class User {
 
     @Id

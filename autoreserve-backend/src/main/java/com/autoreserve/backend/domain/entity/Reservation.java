@@ -97,6 +97,7 @@ public class Reservation {
      * Constructor por defecto para JPA.
      */
     public Reservation() {
+        this.paymentStatus = PaymentStatus.PENDING;
     }
 
     /* ================= GETTERS & SETTERS ================= */

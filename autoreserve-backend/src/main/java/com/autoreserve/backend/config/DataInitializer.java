@@ -4,6 +4,7 @@ import com.autoreserve.backend.domain.entity.*;
 import com.autoreserve.backend.domain.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import java.math.BigDecimal;
  * Se encarga de poblar la base de datos con registros iniciales de sedes, categorías y vehículos.
  */
 @Component
+@Profile("!test")
 @Order(1)
 @Transactional
 public class DataInitializer implements CommandLineRunner {
