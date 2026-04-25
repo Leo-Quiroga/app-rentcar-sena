@@ -32,7 +32,7 @@ export default function Home() {
 
   // Modales
   const [selectedCar, setSelectedCar] = useState(null);
-  const [carToReserve, setCarToReserve] = useState(null); // auto para confirmar
+  const [carToReserve, setCarToReserve] = useState(null);
   const [reservaConfirmada, setReservaConfirmada] = useState(null);
 
   // Cargar datos iniciales
@@ -67,6 +67,18 @@ export default function Home() {
 
     loadData();
   }, [user]);
+
+  // Auto-asignar sedes según la ciudad elegida en el SearchBar
+  useEffect(() => {
+    if (!filters || !branches.length) return;
+
+    const pickupBranch = branches.find(b => b.city === filters.pickupCity);
+    const dropoffCity = filters.dropoffCity || filters.pickupCity;
+    const dropoffBranch = branches.find(b => b.city === dropoffCity);
+
+    setSelectedPickupBranch(pickupBranch ? String(pickupBranch.id) : "");
+    setSelectedDropoffBranch(dropoffBranch ? String(dropoffBranch.id) : "");
+  }, [filters, branches]);
 
   // Buscar autos disponibles cuando hay filtros, sino mostrar autos aleatorios
   useEffect(() => {
@@ -112,8 +124,8 @@ export default function Home() {
 
   // Confirmación de la reserva (pasa del modal confirmar → modal confirmada)
   const handleConfirmReservation = ({ reservation, car, filters, dias, total }) => {
-    setCarToReserve(null);          // cierra modal confirmar
-    setReservaConfirmada({ reservation, car, filters, dias, total }); // abre modal reserva confirmada
+    setCarToReserve(null);
+    setReservaConfirmada({ reservation, car, filters, dias, total });
   };
 
   if (loading) {
@@ -128,7 +140,11 @@ export default function Home() {
     );
   }
 
- // Renderizar página de inicio
+  // Nombres de sedes para mostrar en el mensaje de búsqueda
+  const pickupBranchName = branches.find(b => String(b.id) === selectedPickupBranch)?.name || filters?.pickupCity || "";
+  const dropoffBranchName = branches.find(b => String(b.id) === selectedDropoffBranch)?.name || filters?.dropoffCity || filters?.pickupCity || "";
+
+  // Renderizar página de inicio
   return (
     <div className="bg-neutral-light min-h-screen">
       <div className="space-y-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -138,127 +154,76 @@ export default function Home() {
           <SearchBar onSearch={(f) => setFilters(f)} />
           {filters && (
             <div className="mt-4 space-y-3">
+              {/* Mensaje de búsqueda con sede de retiro y entrega */}
               <div className="text-xs sm:text-sm text-gray-700 bg-white p-3 rounded shadow-sm max-w-3xl mx-auto">
                 <strong>Búsqueda:</strong>{" "}
-                {filters.pickupCity} → {filters.dropoffCity || filters.pickupCity} |{" "}
-                {filters.startDate || "Fecha inicio no seleccionada"} →{" "}
+                Retiro: <span className="font-medium">{pickupBranchName}</span>
+                {" → "}
+                Entrega: <span className="font-medium">{dropoffBranchName}</span>
+                {" | "}
+                {filters.startDate || "Fecha inicio no seleccionada"}
+                {" → "}
                 {filters.endDate || "Fecha fin no seleccionada"}
               </div>
-              
-              {/* Información de sedes y cliente seleccionados */}
-              {(selectedPickupBranch || selectedDropoffBranch || (isAdmin && selectedClient)) && (
-                <div className="text-xs sm:text-sm text-gray-700 bg-white p-3 rounded shadow-sm max-w-3xl mx-auto">
-                  <strong>Selección:</strong>{" "}
-                  {selectedPickupBranch && (
-                    <span>Retiro: {branches.find(b => b.id == selectedPickupBranch)?.name}</span>
-                  )}
-                  {selectedPickupBranch && selectedDropoffBranch && " | "}
-                  {selectedDropoffBranch && (
-                    <span>Entrega: {branches.find(b => b.id == selectedDropoffBranch)?.name}</span>
-                  )}
-                  {(selectedPickupBranch || selectedDropoffBranch) && isAdmin && selectedClient && " | "}
-                  {isAdmin && selectedClient && (
-                    <span>Cliente: {users.find(u => u.id == selectedClient)?.firstName} {users.find(u => u.id == selectedClient)?.lastName}</span>
-                  )}
-                </div>
-              )}
-              
-              {/* Selector de sedes */}
-              <div className="bg-white p-4 rounded shadow-sm max-w-3xl mx-auto">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Selecciona las sedes:</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Sede de Retiro</label>
-                    <select
-                      value={selectedPickupBranch}
-                      onChange={(e) => setSelectedPickupBranch(e.target.value)}
+
+              {/* Selector de cliente (solo admin) */}
+              {isAdmin && (
+                <div className="bg-white p-4 rounded shadow-sm max-w-3xl mx-auto">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Selecciona el cliente:</h3>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Buscar por nombre, email o ID..."
+                      value={clientFilter}
+                      onChange={(e) => {
+                        setClientFilter(e.target.value);
+                        setSelectedClient("");
+                      }}
                       className="w-full text-sm border border-gray-300 rounded px-3 py-2 focus:ring-primary focus:border-primary"
-                    >
-                      <option value="">Selecciona sede de retiro</option>
-                      {branches.filter(b => b.city === filters.pickupCity).map((branch) => (
-                        <option key={branch.id} value={branch.id}>
-                          {branch.name} - {branch.address}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Sede de Entrega</label>
-                    <select
-                      value={selectedDropoffBranch}
-                      onChange={(e) => setSelectedDropoffBranch(e.target.value)}
-                      className="w-full text-sm border border-gray-300 rounded px-3 py-2 focus:ring-primary focus:border-primary"
-                    >
-                      <option value="">Selecciona sede de entrega</option>
-                      {branches.filter(b => b.city === (filters.dropoffCity || filters.pickupCity)).map((branch) => (
-                        <option key={branch.id} value={branch.id}>
-                          {branch.name} - {branch.address}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                
-                {/* Selector de cliente (solo admin) */}
-                {isAdmin && (
-                  <div className="mt-4">
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Selecciona el cliente:</h3>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Buscar por nombre, email, ID o licencia..."
-                        value={clientFilter}
-                        onChange={(e) => {
-                          setClientFilter(e.target.value);
-                          setSelectedClient("");
-                        }}
-                        className="w-full text-sm border border-gray-300 rounded px-3 py-2 focus:ring-primary focus:border-primary"
-                      />
-                      
-                      {/* Sugerencias dinámicas */}
-                      {clientFilter && !selectedClient && (
-                        <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-b-lg shadow-lg max-h-40 overflow-y-auto">
-                          {users
-                            .filter(u => u.role === 'CLIENT' && (
-                              `${u.firstName} ${u.lastName}`.toLowerCase().includes(clientFilter.toLowerCase()) ||
-                              u.email.toLowerCase().includes(clientFilter.toLowerCase()) ||
-                              u.id.toString().includes(clientFilter)
-                            ))
-                            .slice(0, 5)
-                            .map((user) => (
-                              <div
-                                key={user.id}
-                                onClick={() => {
-                                  setSelectedClient(user.id);
-                                  setClientFilter(`${user.firstName} ${user.lastName} - ${user.email}`);
-                                }}
-                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                              >
-                                <div className="text-sm font-medium text-gray-900">
-                                  {user.firstName} {user.lastName}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  #{user.id} - {user.email}
-                                </div>
-                              </div>
-                            ))
-                          }
-                          {users.filter(u => u.role === 'CLIENT' && (
+                    />
+
+                    {/* Sugerencias dinámicas */}
+                    {clientFilter && !selectedClient && (
+                      <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-b-lg shadow-lg max-h-40 overflow-y-auto">
+                        {users
+                          .filter(u => u.role === 'CLIENT' && (
                             `${u.firstName} ${u.lastName}`.toLowerCase().includes(clientFilter.toLowerCase()) ||
                             u.email.toLowerCase().includes(clientFilter.toLowerCase()) ||
                             u.id.toString().includes(clientFilter)
-                          )).length === 0 && (
-                            <div className="px-3 py-2 text-sm text-gray-500 italic">
-                              No se encontraron clientes
+                          ))
+                          .slice(0, 5)
+                          .map((u) => (
+                            <div
+                              key={u.id}
+                              onClick={() => {
+                                setSelectedClient(u.id);
+                                setClientFilter(`${u.firstName} ${u.lastName} - ${u.email}`);
+                              }}
+                              className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="text-sm font-medium text-gray-900">
+                                {u.firstName} {u.lastName}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                #{u.id} - {u.email}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                          ))
+                        }
+                        {users.filter(u => u.role === 'CLIENT' && (
+                          `${u.firstName} ${u.lastName}`.toLowerCase().includes(clientFilter.toLowerCase()) ||
+                          u.email.toLowerCase().includes(clientFilter.toLowerCase()) ||
+                          u.id.toString().includes(clientFilter)
+                        )).length === 0 && (
+                          <div className="px-3 py-2 text-sm text-gray-500 italic">
+                            No se encontraron clientes
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -310,7 +275,7 @@ export default function Home() {
                     return;
                   }
                   if (!selectedPickupBranch || !selectedDropoffBranch) {
-                    alert("Selecciona las sedes de retiro y entrega antes de reservar.");
+                    alert("No se encontró una sede disponible para la ciudad seleccionada.");
                     return;
                   }
                   if (isAdmin && !selectedClient) {
