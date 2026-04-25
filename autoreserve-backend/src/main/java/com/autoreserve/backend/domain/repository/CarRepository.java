@@ -23,7 +23,7 @@ public interface CarRepository extends JpaRepository<Car, Long> {
            "AND c.id NOT IN (" +
            "  SELECT r.car.id FROM Reservation r " +
            "  WHERE r.status = 'CONFIRMED' " +
-           "  AND ((:startDate < r.endDate) AND (:endDate > r.startDate))" +
+           "  AND ((:startDate <= r.endDate) AND (:endDate >= r.startDate))" +
            ")")
     List<Car> findAvailableCars(@Param("startDate") LocalDate startDate, 
                                @Param("endDate") LocalDate endDate,

@@ -77,6 +77,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/cars/**").permitAll()
                         .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/branches/**").permitAll()
+                        .requestMatchers("/api/search/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         // Endpoints de perfil propio - cualquier usuario autenticado
                         .requestMatchers("/api/admin/users/me").authenticated()
