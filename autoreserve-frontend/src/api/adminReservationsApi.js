@@ -1,13 +1,27 @@
 import { apiFetch } from "./http";
 
-// API para gestión administrativa de reservas (requiere rol ADMIN)
-
-// Obtener todas las reservas (admin)
 export function getAdminReservations(page = 0, size = 20) {
-  return apiFetch(`/api/admin/reservations?page=${page}&size=${size}`);
+  return apiFetch(`/api/admin/reservations?page=${page}&size=${size}`)
+    .then(response => {
+      // Si la respuesta tiene estructura { success: true, data: [...] }
+      if (response.success && response.data) {
+        return response.data;
+      }
+      // Si es un array directo
+      return response;
+    });
 }
 
-// Crear reserva para un cliente (admin)
+export function getAdminReservationById(id) {
+  return apiFetch(`/api/admin/reservations/${id}`)
+    .then(response => {
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return response;
+    });
+}
+
 export function createReservationForClient(data) {
   return apiFetch("/api/admin/reservations", {
     method: "POST",
@@ -15,9 +29,14 @@ export function createReservationForClient(data) {
   });
 }
 
-// Actualizar estado de reserva (admin)
 export function updateReservationStatus(id, status) {
   return apiFetch(`/api/admin/reservations/${id}/status?status=${status}`, {
+    method: "PUT",
+  });
+}
+
+export function updatePaymentStatus(id, paymentStatus) {
+  return apiFetch(`/api/admin/reservations/${id}/payment-status?paymentStatus=${paymentStatus}`, {
     method: "PUT",
   });
 }

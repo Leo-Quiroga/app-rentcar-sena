@@ -15,9 +15,10 @@ const STATUS_CONFIG = {
 };
 
 const PAYMENT_CONFIG = {
-  PENDING:  { label: "Pendiente", pill: "bg-orange-100 text-orange-800" },
-  PAID:     { label: "Pagado",    pill: "bg-green-100 text-green-800" },
-  REFUNDED: { label: "Reembolsado", pill: "bg-gray-100 text-gray-600" },
+  NO_PAYMENT:     { label: "Sin pago",       pill: "bg-gray-100 text-gray-600" },
+  PAID:           { label: "Pagado",         pill: "bg-green-100 text-green-800" },
+  REFUND_PENDING: { label: "En devolución",  pill: "bg-yellow-100 text-yellow-800" },
+  REFUNDED:       { label: "Pago devuelto",  pill: "bg-blue-100 text-blue-800" },
 };
 
 function Pill({ value, config }) {
@@ -55,10 +56,13 @@ export default function Reservations() {
     const load = async () => {
       try {
         setLoading(true);
-        const data = await getMyReservations();
-        setReservations(data);
+        const response = await getMyReservations();
+        // El backend retorna { success: true, data: [...] }
+        const data = response.data || response;
+        setReservations(Array.isArray(data) ? data : []);
       } catch (err) {
-        setError(err.message);
+        console.error('Error cargando mis reservas:', err);
+        setError(err.message || 'Error al cargar las reservas');
       } finally {
         setLoading(false);
       }

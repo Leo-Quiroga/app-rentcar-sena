@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
 import { loginRequest } from "./authApi";
+import { getMyProfile } from "../api/userApi";
 
 // Proveedor de contexto de autenticación
 export function AuthProvider({ children }) {
@@ -13,11 +14,9 @@ export function AuthProvider({ children }) {
       const stored = localStorage.getItem("auth");
       if (stored) {
         const parsedUser = JSON.parse(stored);
-        // Validar que el objeto tenga las propiedades necesarias
         if (parsedUser && parsedUser.email && parsedUser.id) {
           setUser(parsedUser);
         } else {
-          // Si los datos están corruptos, limpiar localStorage
           localStorage.removeItem("auth");
         }
       }
@@ -27,7 +26,7 @@ export function AuthProvider({ children }) {
     }
     setLoading(false);
   }, []);
-  
+
   // Función para iniciar sesión
   const login = async (email, password) => {
     const data = await loginRequest(email, password);
@@ -36,16 +35,30 @@ export function AuthProvider({ children }) {
       id: data.userId,
       email: data.email,
       role: data.role,
-      token: data.token
+      token: data.token,
+      firstName: "",
+      lastName: "",
     };
 
-    // Validar que los datos del backend sean correctos
     if (!authUser.email || !authUser.id) {
       throw new Error("Datos de usuario incompletos del servidor");
     }
 
+    // Guardar token primero para que getMyProfile pueda autenticarse
     localStorage.setItem("auth", JSON.stringify(authUser));
     setUser(authUser);
+
+    // Enriquecer con nombre completo desde el perfil
+    try {
+      const profile = await getMyProfile();
+      authUser.firstName = profile.firstName || "";
+      authUser.lastName = profile.lastName || "";
+      localStorage.setItem("auth", JSON.stringify(authUser));
+      setUser({ ...authUser });
+    } catch {
+      // Si falla, continúa sin nombre — no es bloqueante
+    }
+
     return authUser;
   };
 

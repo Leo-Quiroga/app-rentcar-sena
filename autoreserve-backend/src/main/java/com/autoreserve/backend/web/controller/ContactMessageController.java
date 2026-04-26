@@ -38,7 +38,6 @@ public class ContactMessageController {
         try {
             ContactMessage ticket = new ContactMessage();
 
-            // Si está autenticado, asociar al usuario
             if (principal != null) {
                 userRepository.findByEmail(principal.getUsername()).ifPresent(u -> {
                     ticket.setUser(u);
@@ -55,7 +54,6 @@ public class ContactMessageController {
 
             ContactMessage saved = messageRepository.save(ticket);
 
-            // Crear el primer mensaje del hilo
             MessageReply firstReply = new MessageReply();
             firstReply.setContactMessage(saved);
             firstReply.setContent(body.getOrDefault("message", ""));
@@ -71,6 +69,33 @@ public class ContactMessageController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    /** Conteo de mensajes no leídos según el rol del usuario autenticado */
+    @GetMapping("/unread-count")
+    public ResponseEntity<?> getUnreadCount(@AuthenticationPrincipal UserDetails principal) {
+        try {
+            User user = userRepository.findByEmail(principal.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            long count;
+            if ("ADMIN".equals(user.getRole().getName())) {
+                // Admin: tickets en OPEN (clientes esperando respuesta)
+                count = messageRepository.findAllByOrderByCreatedAtDesc().stream()
+                        .filter(t -> t.getStatus() == MessageStatus.OPEN)
+                        .count();
+            } else {
+                // Cliente: sus tickets en ANSWERED (admin respondió, cliente no ha visto)
+                count = messageRepository.findByUserOrderByCreatedAtDesc(user).stream()
+                        .filter(t -> t.getStatus() == MessageStatus.ANSWERED)
+                        .count();
+            }
+
+            return ResponseEntity.ok(Map.of("unreadCount", count));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("unreadCount", 0));
         }
     }
 
@@ -103,8 +128,8 @@ public class ContactMessageController {
                 return ResponseEntity.status(403).body(Map.of("success", false, "error", "Sin permisos"));
             }
 
-            // Marcar como IN_PROGRESS si estaba OPEN
-            if (ticket.getStatus() == MessageStatus.OPEN) {
+            // Al ver el hilo, si estaba ANSWERED pasa a IN_PROGRESS (cliente lo leyó)
+            if (ticket.getStatus() == MessageStatus.ANSWERED) {
                 ticket.setStatus(MessageStatus.IN_PROGRESS);
                 ticket.setUpdatedAt(LocalDateTime.now());
                 messageRepository.save(ticket);
@@ -150,7 +175,6 @@ public class ContactMessageController {
             reply.setAuthorName(user.getFirstName() + " " + user.getLastName());
             replyRepository.save(reply);
 
-            // Volver a OPEN para que el admin sepa que hay nueva respuesta
             ticket.setStatus(MessageStatus.OPEN);
             ticket.setUpdatedAt(LocalDateTime.now());
             messageRepository.save(ticket);
@@ -198,6 +222,48 @@ public class ContactMessageController {
         return ResponseEntity.ok(tickets.stream().map(this::toSummary).toList());
     }
 
+    /** Admin inicia una conversación con un cliente */
+    @PostMapping("/admin/new")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> adminStartConversation(
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal UserDetails principal) {
+        try {
+            User admin = userRepository.findByEmail(principal.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
+
+            Long clientId = Long.parseLong(body.getOrDefault("userId", "0"));
+            User client = userRepository.findById(clientId)
+                    .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+
+            ContactMessage ticket = new ContactMessage();
+            ticket.setUser(client);
+            ticket.setSenderName(client.getFirstName() + " " + client.getLastName());
+            ticket.setSenderEmail(client.getEmail());
+            ticket.setSubject(body.getOrDefault("subject", "Mensaje de AutoReserve"));
+            ticket.setType(MessageType.valueOf(body.getOrDefault("type", "SOLICITUD")));
+            ticket.setStatus(MessageStatus.ANSWERED); // Admin ya respondió (inició él)
+
+            ContactMessage saved = messageRepository.save(ticket);
+
+            MessageReply firstReply = new MessageReply();
+            firstReply.setContactMessage(saved);
+            firstReply.setContent(body.getOrDefault("message", ""));
+            firstReply.setSentBy(MessageSender.ADMIN);
+            firstReply.setAuthorName("Soporte AutoReserve");
+            replyRepository.save(firstReply);
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Mensaje enviado al cliente exitosamente",
+                "ticketId", saved.getId()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
     /** Ver hilo completo de un ticket (admin) */
     @GetMapping("/admin/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -233,8 +299,6 @@ public class ContactMessageController {
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal UserDetails principal) {
         try {
-            User admin = userRepository.findByEmail(principal.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
             ContactMessage ticket = messageRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Ticket no encontrado"));
 

@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 export default function Footer() {
   const { user } = useAuth();
   const isLoggedIn = Boolean(user);
+  const isAdmin = user?.role === "ADMIN";
 
   return (
     <footer className="bg-neutral-dark text-gray-300 py-6 mt-10">
@@ -12,11 +13,8 @@ export default function Footer() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <img
-            src="/src/assets/logowhite.png"
-            alt="AutoReserve"
-            className="h-10 sm:h-12 md:h-14 w-auto object-contain"
-          />
+          <img src="/src/assets/logowhite.png" alt="AutoReserve"
+            className="h-10 sm:h-12 md:h-14 w-auto object-contain" />
           <p className="font-display text-base text-gray-400">AutoReserve</p>
         </Link>
 
@@ -27,15 +25,14 @@ export default function Footer() {
 
         {/* Links secundarios */}
         <nav aria-label="Enlaces secundarios" className="flex flex-wrap justify-center gap-6 text-sm">
-          <Link to="/politicas" className="hover:text-secondary transition">
-            Políticas
-          </Link>
-          <Link to="/contacto" className="hover:text-secondary transition">
-            Contacto y FAQ
-          </Link>
+          <Link to="/politicas" className="hover:text-secondary transition">Políticas</Link>
+          <Link to="/contacto" className="hover:text-secondary transition">Contacto y FAQ</Link>
           {isLoggedIn && (
-            <Link to="/mis-mensajes" className="hover:text-secondary transition">
-              Mis mensajes
+            <Link
+              to={isAdmin ? "/admin/mensajes" : "/mis-mensajes"}
+              className="hover:text-secondary transition"
+            >
+              {isAdmin ? "Gestor de mensajes" : "Mis mensajes"}
             </Link>
           )}
         </nav>

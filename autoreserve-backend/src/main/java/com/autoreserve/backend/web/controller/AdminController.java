@@ -1,5 +1,7 @@
 package com.autoreserve.backend.web.controller;
 
+import com.autoreserve.backend.domain.entity.ReservationStatus;
+import com.autoreserve.backend.domain.entity.CarStatus;
 import com.autoreserve.backend.domain.repository.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,9 +46,17 @@ public class AdminController {
             long totalCategories = categoryRepository.count();
             long totalBranches = branchRepository.count();
 
+            // Estadísticas de autos por estado
+            long availableCars = carRepository.findByStatus(CarStatus.AVAILABLE).size();
+            long rentedCars = carRepository.findByStatus(CarStatus.RENTED).size();
+            long maintenanceCars = carRepository.findByStatus(CarStatus.MAINTENANCE).size();
+
             Map<String, Object> stats = Map.of(
                     "totalUsers", totalUsers,
                     "totalCars", totalCars,
+                    "availableCars", availableCars,
+                    "rentedCars", rentedCars,
+                    "maintenanceCars", maintenanceCars,
                     "totalReservations", totalReservations,
                     "totalCategories", totalCategories,
                     "totalBranches", totalBranches,

@@ -16,7 +16,7 @@ const STATUS_CONFIG = {
     pill: "bg-green-100 text-green-800",
     banner: "bg-green-50 border-green-200 text-green-800",
     icon: "✅",
-    message: "Tu pago fue recibido y la reserva está confirmada. El vehículo estará disponible en la sede de retiro en la fecha indicada.",
+    message: "Tu pago fue recibido y la reserva está confirmada. El vehículo estará disponible en la sede de retiro en la fecha indicada. Puedes cancelar con al menos 7 días de anticipación.",
   },
   IN_PROGRESS: {
     label: "En curso",
@@ -42,9 +42,10 @@ const STATUS_CONFIG = {
 };
 
 const PAYMENT_CONFIG = {
-  PENDING:  { label: "Pago pendiente",  pill: "bg-orange-100 text-orange-800" },
-  PAID:     { label: "Pagado",          pill: "bg-green-100 text-green-800" },
-  REFUNDED: { label: "Reembolsado",     pill: "bg-gray-100 text-gray-600" },
+  NO_PAYMENT:     { label: "Sin pago",      pill: "bg-gray-100 text-gray-600" },
+  PAID:           { label: "Pagado",        pill: "bg-green-100 text-green-800" },
+  REFUND_PENDING: { label: "En devolución", pill: "bg-yellow-100 text-yellow-800" },
+  REFUNDED:       { label: "Pago devuelto", pill: "bg-blue-100 text-blue-800" },
 };
 
 function StatusPill({ value, config }) {
@@ -67,16 +68,22 @@ export default function ReservationDetail() {
     const loadReservation = async () => {
       try {
         setLoading(true);
+        console.log('Cargando reserva con ID:', id);
         const data = await getReservationById(id);
+        console.log('Datos de reserva recibidos:', data);
         setReservation(data);
         setError(null);
       } catch (err) {
-        setError(err.message);
+        console.error('Error cargando reserva:', err);
+        setError(err.message || 'Error al cargar la reserva');
       } finally {
         setLoading(false);
       }
     };
-    if (id) loadReservation();
+    
+    if (id) {
+      loadReservation();
+    }
   }, [id]);
 
   const handleCancel = async () => {
@@ -140,11 +147,10 @@ export default function ReservationDetail() {
           </div>
           <div className="flex flex-col items-end gap-2">
             <StatusPill value={reservation.status} config={STATUS_CONFIG} />
-            {/* Solo mostrar estado de pago si aporta información adicional */}
-            {reservation.paymentStatus === "PAID" && (
-              <StatusPill value={reservation.paymentStatus} config={PAYMENT_CONFIG} />
-            )}
-            {reservation.paymentStatus === "REFUNDED" && (
+            {/* Mostrar estado de pago cuando aporta información adicional */}
+            {(reservation.paymentStatus === "PAID" ||
+              reservation.paymentStatus === "REFUND_PENDING" ||
+              reservation.paymentStatus === "REFUNDED") && (
               <StatusPill value={reservation.paymentStatus} config={PAYMENT_CONFIG} />
             )}
           </div>

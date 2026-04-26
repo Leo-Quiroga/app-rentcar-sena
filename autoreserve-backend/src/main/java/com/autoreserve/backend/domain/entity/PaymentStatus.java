@@ -1,10 +1,8 @@
 package com.autoreserve.backend.domain.entity;
 
-/**
- * Estados de pago de una reserva
- */
 public enum PaymentStatus {
-    PENDING,    // Pendiente de pago
-    PAID,       // Pagado
-    REFUNDED    // Reembolsado
+    NO_PAYMENT,     // Reserva creada sin pago (PENDING)
+    PAID,           // Pago confirmado
+    REFUND_PENDING, // Cancelación aprobada, reembolso en proceso
+    REFUNDED        // Dinero devuelto al cliente
 }

@@ -175,6 +175,31 @@ public class AdminCarController {
 
     // ===================== UNIDADES =====================
 
+    /** Agrega unidades adicionales a un modelo existente */
+    @PostMapping("/models/{modelId}/units")
+    public ResponseEntity<?> addUnitsToModel(@PathVariable Long modelId,
+                                              @RequestBody java.util.Map<String, Object> body) {
+        try {
+            CarModel model = carModelRepository.findById(modelId)
+                    .orElseThrow(() -> new RuntimeException("Modelo no encontrado"));
+            Long branchId = Long.parseLong(body.get("branchId").toString());
+            Branch branch = branchRepository.findById(branchId)
+                    .orElseThrow(() -> new RuntimeException("Sede no encontrada"));
+            Car unit = new Car();
+            unit.setCarModel(model);
+            unit.setBranch(branch);
+            unit.setStatus(CarStatus.PENDING_REGISTRATION);
+            Car saved = carRepository.save(unit);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Unidad agregada exitosamente",
+                "unitId", saved.getId()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
     /** Lista todas las unidades de un modelo */
     @GetMapping("/models/{modelId}/units")
     public ResponseEntity<?> getUnitsByModel(@PathVariable Long modelId) {

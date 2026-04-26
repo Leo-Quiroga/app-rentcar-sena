@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getAdminCarModels, deleteCarModel,
-  getUnitsByModel, updateCarUnit, deleteCarUnit
+  getUnitsByModel, updateCarUnit, deleteCarUnit, createCarModel
 } from "../api/adminCarsApi";
+import { getAdminBranches } from "../api/adminBranchesApi";
 
-// Normaliza texto eliminando tildes para comparación sin distinción de acentos
 const normalize = (str) =>
   String(str ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
@@ -33,13 +33,13 @@ function SortIcon({ col, sortCol, sortDir }) {
 }
 
 // ── Fila de unidad individual (editable) ──────────────────────────────────────
-function UnitRow({ unit, onSave, onDelete }) {
+function UnitRow({ unit, branches, onSave, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     plate: unit.plate || "",
     color: unit.color || "",
     status: unit.status || "PENDING_REGISTRATION",
-    branchId: unit.branchId || "",
+    branchId: unit.branchId ? String(unit.branchId) : "",
     notes: unit.notes || "",
   });
   const [saving, setSaving] = useState(false);
@@ -81,7 +81,15 @@ function UnitRow({ unit, onSave, onDelete }) {
           <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
             placeholder="Notas" className="border rounded px-2 py-1 text-xs w-32" />
         </td>
-        <td className="px-3 py-2 text-xs text-gray-500">{unit.branchName}</td>
+        <td className="px-3 py-2">
+          <select value={form.branchId} onChange={e => setForm({ ...form, branchId: e.target.value })}
+            className="border rounded px-2 py-1 text-xs w-36">
+            <option value="">Selecciona sede</option>
+            {branches.map(b => (
+              <option key={b.id} value={String(b.id)}>{b.name}</option>
+            ))}
+          </select>
+        </td>
         <td className="px-3 py-2">
           {error && <p className="text-red-500 text-xs mb-1">{error}</p>}
           <div className="flex gap-1">
@@ -110,7 +118,7 @@ function UnitRow({ unit, onSave, onDelete }) {
         <div className="flex gap-1">
           <button onClick={() => setEditing(true)}
             className="text-xs px-2 py-1 text-yellow-600 border border-yellow-200 rounded hover:bg-yellow-50">
-            ✏️ Identificar
+            ✏️ Editar
           </button>
           <button onClick={() => onDelete(unit.id)}
             className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50">
@@ -122,25 +130,28 @@ function UnitRow({ unit, onSave, onDelete }) {
   );
 }
 
-// ── Desplegable de unidades con filtros y ordenadores ─────────────────────────
-function UnitsPanel({ modelId, modelName, onClose }) {
+// ── Desplegable de unidades con filtros, ordenadores y agregar unidades ────────
+function UnitsPanel({ modelId, modelName, branches, onClose }) {
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Filtros
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-
-  // Ordenamiento (por defecto: sede)
   const [sortCol, setSortCol] = useState("branchName");
   const [sortDir, setSortDir] = useState("asc");
 
-  useEffect(() => {
+  // Agregar unidades
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addQty, setAddQty] = useState(1);
+  const [addBranchId, setAddBranchId] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const load = () =>
     getUnitsByModel(modelId)
       .then(setUnits)
       .catch(err => alert("Error: " + err.message))
       .finally(() => setLoading(false));
-  }, [modelId]);
+
+  useEffect(() => { load(); }, [modelId]);
 
   const handleSort = (col) => {
     if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -149,14 +160,38 @@ function UnitsPanel({ modelId, modelName, onClose }) {
 
   const handleSaveUnit = async (unitId, form) => {
     await updateCarUnit(unitId, form);
-    const data = await getUnitsByModel(modelId);
-    setUnits(data);
+    await load();
   };
 
   const handleDeleteUnit = async (unitId) => {
     if (!window.confirm("¿Eliminar esta unidad?")) return;
     await deleteCarUnit(unitId);
     setUnits(prev => prev.filter(u => u.id !== unitId));
+  };
+
+  const handleAddUnits = async () => {
+    if (!addBranchId) { alert("Selecciona una sede para las nuevas unidades."); return; }
+    setAdding(true);
+    try {
+      // Reutilizamos el endpoint de crear modelo pasando quantity y branchId
+      // pero en realidad necesitamos un endpoint de agregar unidades a modelo existente
+      // Usamos updateCarUnit con POST al endpoint de unidades del modelo
+      const { apiFetch } = await import("../api/http.js");
+      for (let i = 0; i < addQty; i++) {
+        await apiFetch(`/api/admin/cars/models/${modelId}/units`, {
+          method: "POST",
+          body: JSON.stringify({ branchId: parseInt(addBranchId) }),
+        });
+      }
+      await load();
+      setShowAddForm(false);
+      setAddQty(1);
+      setAddBranchId("");
+    } catch (err) {
+      alert("Error agregando unidades: " + err.message);
+    } finally {
+      setAdding(false);
+    }
   };
 
   const filtered = units.filter(u => {
@@ -187,20 +222,13 @@ function UnitsPanel({ modelId, modelName, onClose }) {
             <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600">▲ Ocultar</button>
           </div>
 
-          {/* Filtros de unidades */}
+          {/* Filtros */}
           <div className="flex flex-wrap gap-2 mb-3">
-            <input
-              type="text"
-              placeholder="Buscar placa, color, sede, estado..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-xs focus:ring-primary focus:border-primary w-56"
-            />
-            <select
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-xs focus:ring-primary focus:border-primary"
-            >
+            <input type="text" placeholder="Buscar placa, color, sede, estado..."
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="border border-gray-300 rounded px-2 py-1 text-xs focus:ring-primary focus:border-primary w-56" />
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+              className="border border-gray-300 rounded px-2 py-1 text-xs focus:ring-primary focus:border-primary">
               <option value="">Todos los estados</option>
               {Object.entries(STATUS_LABEL).map(([k, v]) => (
                 <option key={k} value={k}>{v.text}</option>
@@ -208,43 +236,83 @@ function UnitsPanel({ modelId, modelName, onClose }) {
             </select>
             {(search || filterStatus) && (
               <button onClick={() => { setSearch(""); setFilterStatus(""); }}
-                className="text-xs text-gray-400 hover:text-red-500 underline">
-                Limpiar
-              </button>
+                className="text-xs text-gray-400 hover:text-red-500 underline">Limpiar</button>
             )}
           </div>
 
           {loading ? (
             <p className="text-xs text-gray-400">Cargando unidades...</p>
-          ) : sorted.length === 0 ? (
-            <p className="text-xs text-gray-400 italic">
-              {search || filterStatus ? "No hay unidades con esos filtros." : "No hay unidades registradas."}
-            </p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-gray-500 border-b">
-                  {[
-                    { col: "plate",      label: "Placa" },
-                    { col: "color",      label: "Color" },
-                    { col: "status",     label: "Estado" },
-                    { col: "notes",      label: "Notas" },
-                    { col: "branchName", label: "Sede" },
-                  ].map(({ col, label }) => (
-                    <th key={col} onClick={() => handleSort(col)}
-                      className="px-3 py-1 text-left cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
-                      {label}<SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
-                    </th>
-                  ))}
-                  <th className="px-3 py-1 text-left">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map(unit => (
-                  <UnitRow key={unit.id} unit={unit} onSave={handleSaveUnit} onDelete={handleDeleteUnit} />
-                ))}
-              </tbody>
-            </table>
+            <>
+              {sorted.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">
+                  {search || filterStatus ? "No hay unidades con esos filtros." : "No hay unidades registradas."}
+                </p>
+              ) : (
+                <table className="w-full text-sm mb-3">
+                  <thead>
+                    <tr className="text-xs text-gray-500 border-b">
+                      {[
+                        { col: "plate",      label: "Placa" },
+                        { col: "color",      label: "Color" },
+                        { col: "status",     label: "Estado" },
+                        { col: "notes",      label: "Notas" },
+                        { col: "branchName", label: "Sede" },
+                      ].map(({ col, label }) => (
+                        <th key={col} onClick={() => handleSort(col)}
+                          className="px-3 py-1 text-left cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
+                          {label}<SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
+                        </th>
+                      ))}
+                      <th className="px-3 py-1 text-left">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sorted.map(unit => (
+                      <UnitRow key={unit.id} unit={unit} branches={branches}
+                        onSave={handleSaveUnit} onDelete={handleDeleteUnit} />
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {/* Agregar unidades */}
+              {!showAddForm ? (
+                <button onClick={() => setShowAddForm(true)}
+                  className="text-xs px-3 py-1 border border-dashed border-gray-400 text-gray-500 rounded hover:border-primary hover:text-primary transition">
+                  + Agregar unidades
+                </button>
+              ) : (
+                <div className="flex items-center gap-3 mt-2 p-3 bg-white border border-gray-200 rounded">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Cantidad</label>
+                    <input type="number" min="1" max="20" value={addQty}
+                      onChange={e => setAddQty(parseInt(e.target.value) || 1)}
+                      className="border rounded px-2 py-1 text-xs w-16" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Sede *</label>
+                    <select value={addBranchId} onChange={e => setAddBranchId(e.target.value)}
+                      className="border rounded px-2 py-1 text-xs w-40">
+                      <option value="">Selecciona sede</option>
+                      {branches.map(b => (
+                        <option key={b.id} value={String(b.id)}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-1 mt-4">
+                    <button onClick={handleAddUnits} disabled={adding}
+                      className="text-xs px-3 py-1 bg-primary text-white rounded hover:bg-primary-dark disabled:opacity-50">
+                      {adding ? "..." : "Agregar"}
+                    </button>
+                    <button onClick={() => setShowAddForm(false)}
+                      className="text-xs px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </td>
@@ -252,8 +320,8 @@ function UnitsPanel({ modelId, modelName, onClose }) {
   );
 }
 
-// ── Fila de modelo con desplegable ────────────────────────────────────────────
-function ModelRow({ model, onDelete, navigate }) {
+// ── Fila de modelo ─────────────────────────────────────────────────────────────
+function ModelRow({ model, branches, onDelete, navigate }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -289,6 +357,7 @@ function ModelRow({ model, onDelete, navigate }) {
         <UnitsPanel
           modelId={model.id}
           modelName={`${model.brand} ${model.model}`}
+          branches={branches}
           onClose={() => setExpanded(false)}
         />
       )}
@@ -300,17 +369,16 @@ function ModelRow({ model, onDelete, navigate }) {
 export default function AdminAutos() {
   const navigate = useNavigate();
   const [models, setModels] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Filtro principal
   const [search, setSearch] = useState("");
-
-  // Ordenamiento (por defecto: categoría)
   const [sortCol, setSortCol] = useState("categoryName");
   const [sortDir, setSortDir] = useState("asc");
 
-  useEffect(() => { loadModels(); }, []);
+  useEffect(() => {
+    Promise.all([loadModels(), loadBranches()]);
+  }, []);
 
   const loadModels = async () => {
     try {
@@ -323,6 +391,13 @@ export default function AdminAutos() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadBranches = async () => {
+    try {
+      const data = await getAdminBranches();
+      setBranches(data);
+    } catch { /* no bloquear si falla */ }
   };
 
   const handleSort = (col) => {
@@ -386,7 +461,6 @@ export default function AdminAutos() {
           </button>
         </div>
 
-        {/* Buscador */}
         <div className="mb-4">
           <input type="text" placeholder="Buscar por marca, modelo o categoría..."
             value={search} onChange={e => setSearch(e.target.value)}
@@ -398,11 +472,11 @@ export default function AdminAutos() {
             <thead className="bg-gray-50 border-b">
               <tr>
                 {[
-                  { col: "brand",         label: "Modelo" },
-                  { col: "year",          label: "Año" },
-                  { col: "categoryName",  label: "Categoría" },
-                  { col: "pricePerDay",   label: "Precio/día" },
-                  { col: "availableUnits",label: "Disponibilidad" },
+                  { col: "brand",          label: "Modelo" },
+                  { col: "year",           label: "Año" },
+                  { col: "categoryName",   label: "Categoría" },
+                  { col: "pricePerDay",    label: "Precio/día" },
+                  { col: "availableUnits", label: "Disponibilidad hoy" },
                 ].map(({ col, label }) => (
                   <th key={col} onClick={() => handleSort(col)}
                     className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
@@ -414,7 +488,8 @@ export default function AdminAutos() {
             </thead>
             <tbody>
               {sorted.map(model => (
-                <ModelRow key={model.id} model={model} onDelete={handleDeleteModel} navigate={navigate} />
+                <ModelRow key={model.id} model={model} branches={branches}
+                  onDelete={handleDeleteModel} navigate={navigate} />
               ))}
               {sorted.length === 0 && (
                 <tr>

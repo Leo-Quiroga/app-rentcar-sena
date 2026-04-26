@@ -9,6 +9,10 @@ export function createTicket(data) {
   });
 }
 
+export function getUnreadCount() {
+  return apiFetch("/api/contact/unread-count");
+}
+
 export function getMyTickets() {
   return apiFetch("/api/contact/my");
 }
@@ -47,4 +51,11 @@ export function adminReply(id, message) {
 
 export function adminCloseTicket(id) {
   return apiFetch(`/api/contact/admin/${id}/close`, { method: "PUT" });
+}
+
+export function adminStartConversation(data) {
+  return apiFetch("/api/contact/admin/new", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }

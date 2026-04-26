@@ -1,7 +1,7 @@
-// Página de administración de reservas
+// Gestor de reservas del administrador
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAdminReservations, updateReservationStatus } from "../api/adminReservationsApi";
+import { getAdminReservations, updateReservationStatus, updatePaymentStatus } from "../api/adminReservationsApi";
 
 const normalize = (str) =>
   String(str ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -15,9 +15,10 @@ const STATUS_CONFIG = {
 };
 
 const PAYMENT_CONFIG = {
-  PENDING:  { label: "Pendiente", pill: "bg-orange-100 text-orange-800" },
-  PAID:     { label: "Pagado",    pill: "bg-green-100 text-green-800" },
-  REFUNDED: { label: "Reembolsado", pill: "bg-gray-100 text-gray-600" },
+  NO_PAYMENT:     { label: "Sin pago",       pill: "bg-gray-100 text-gray-600" },
+  PAID:           { label: "Pagado",         pill: "bg-green-100 text-green-800" },
+  REFUND_PENDING: { label: "En devolución",  pill: "bg-yellow-100 text-yellow-800" },
+  REFUNDED:       { label: "Pago devuelto",  pill: "bg-blue-100 text-blue-800" },
 };
 
 function Pill({ value, config }) {
@@ -40,14 +41,11 @@ export default function AdminReservations() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filtros
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterPayment, setFilterPayment] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
-
-  // Ordenamiento
   const [sortCol, setSortCol] = useState("startDate");
   const [sortDir, setSortDir] = useState("desc");
 
@@ -56,11 +54,14 @@ export default function AdminReservations() {
   const loadReservations = async () => {
     try {
       setLoading(true);
-      const data = await getAdminReservations();
-      setReservations(data);
+      const response = await getAdminReservations();
+      // El backend retorna { success: true, data: [...] }
+      const data = response.data || response;
+      setReservations(Array.isArray(data) ? data : []);
       setError(null);
     } catch (err) {
-      setError(err.message);
+      console.error('Error cargando reservas:', err);
+      setError(err.message || 'Error al cargar las reservas');
     } finally {
       setLoading(false);
     }
@@ -82,7 +83,17 @@ export default function AdminReservations() {
     }
   };
 
-  // Filtrar
+  const handlePaymentStatusChange = async (reservationId, newPaymentStatus) => {
+    try {
+      await updatePaymentStatus(reservationId, newPaymentStatus);
+      setReservations(prev =>
+        prev.map(r => r.id === reservationId ? { ...r, paymentStatus: newPaymentStatus } : r)
+      );
+    } catch (err) {
+      alert("Error actualizando estado de pago: " + err.message);
+    }
+  };
+
   const filtered = reservations.filter(r => {
     const term = normalize(search);
     const matchSearch = !search ||
@@ -100,7 +111,6 @@ export default function AdminReservations() {
     return matchSearch && matchStatus && matchPayment && matchFrom && matchTo;
   });
 
-  // Ordenar
   const sorted = [...filtered].sort((a, b) => {
     let va = a[sortCol] ?? "";
     let vb = b[sortCol] ?? "";
@@ -132,7 +142,6 @@ export default function AdminReservations() {
 
   return (
     <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-      {/* Encabezado */}
       <div className="mb-6">
         <button onClick={() => navigate("/admin")} className="text-primary hover:underline text-sm mb-2">
           ← Volver al Dashboard
@@ -142,10 +151,8 @@ export default function AdminReservations() {
             <h1 className="text-2xl font-bold text-neutral-dark">📋 Gestor de Reservas</h1>
             <p className="text-sm text-gray-500 mt-1">{sorted.length} reserva(s) encontrada(s)</p>
           </div>
-          <button
-            onClick={() => navigate("/")}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm"
-          >
+          <button onClick={() => navigate("/")}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm">
             + Nueva Reserva
           </button>
         </div>
@@ -154,47 +161,29 @@ export default function AdminReservations() {
       {/* Filtros */}
       <div className="bg-white shadow-sm rounded-lg p-4 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <input
-            type="text"
-            placeholder="Buscar ID, auto, cliente, sede..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-          />
-          <select
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-          >
+          <input type="text" placeholder="Buscar ID, auto, cliente, sede..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary">
             <option value="">Todos los estados</option>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
             ))}
           </select>
-          <select
-            value={filterPayment}
-            onChange={e => setFilterPayment(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-          >
+          <select value={filterPayment} onChange={e => setFilterPayment(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary">
             <option value="">Todos los pagos</option>
             {Object.entries(PAYMENT_CONFIG).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
             ))}
           </select>
-          <input
-            type="date"
-            value={filterDateFrom}
-            onChange={e => setFilterDateFrom(e.target.value)}
+          <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)}
             className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-            title="Desde fecha de retiro"
-          />
-          <input
-            type="date"
-            value={filterDateTo}
-            onChange={e => setFilterDateTo(e.target.value)}
+            title="Desde fecha de retiro" />
+          <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)}
             className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-            title="Hasta fecha de retiro"
-          />
+            title="Hasta fecha de retiro" />
         </div>
         {hasFilters && (
           <button onClick={clearFilters} className="mt-3 text-xs text-gray-500 hover:text-red-500 underline">
@@ -209,23 +198,19 @@ export default function AdminReservations() {
           <thead className="bg-gray-50 text-left border-b">
             <tr>
               {[
-                { col: "id",            label: "ID" },
-                { col: "carBrand",      label: "Vehículo" },
-                { col: "userLastName",  label: "Cliente" },
-                { col: "startDate",     label: "Fechas" },
+                { col: "id",             label: "ID" },
+                { col: "carBrand",       label: "Vehículo" },
+                { col: "userLastName",   label: "Cliente" },
+                { col: "startDate",      label: "Fechas" },
                 { col: "pickupBranchName", label: "Sedes" },
-                { col: "totalDays",     label: "Días" },
-                { col: "totalAmount",   label: "Total" },
-                { col: "status",        label: "Estado" },
-                { col: "paymentStatus", label: "Pago" },
+                { col: "totalDays",      label: "Días" },
+                { col: "totalAmount",    label: "Total" },
+                { col: "status",         label: "Estado" },
+                { col: "paymentStatus",  label: "Pago" },
               ].map(({ col, label }) => (
-                <th
-                  key={col}
-                  onClick={() => handleSort(col)}
-                  className="px-4 py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap"
-                >
-                  {label}
-                  <SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
+                <th key={col} onClick={() => handleSort(col)}
+                  className="px-4 py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
+                  {label}<SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
                 </th>
               ))}
               <th className="px-4 py-3 font-semibold text-gray-700 text-center">Acciones</th>
@@ -254,34 +239,33 @@ export default function AdminReservations() {
                 <td className="px-4 py-3 text-center">{r.totalDays}</td>
                 <td className="px-4 py-3 font-medium">${r.totalAmount?.toLocaleString()}</td>
                 <td className="px-4 py-3">
-                  {/* Admin puede cambiar estado directamente */}
-                  <select
-                    value={r.status}
-                    onChange={e => handleStatusChange(r.id, e.target.value)}
-                    className={`px-2 py-1 rounded text-xs font-medium border border-gray-200 cursor-pointer ${STATUS_CONFIG[r.status]?.pill || "bg-gray-100 text-gray-600"}`}
-                  >
+                  <select value={r.status} onChange={e => handleStatusChange(r.id, e.target.value)}
+                    className={`px-2 py-1 rounded text-xs font-medium border border-gray-200 cursor-pointer ${STATUS_CONFIG[r.status]?.pill || "bg-gray-100 text-gray-600"}`}>
                     {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                       <option key={k} value={k}>{v.label}</option>
                     ))}
                   </select>
                 </td>
                 <td className="px-4 py-3">
-                  <Pill value={r.paymentStatus} config={PAYMENT_CONFIG} />
+                  {/* Admin puede editar estado de pago */}
+                  <select value={r.paymentStatus} onChange={e => handlePaymentStatusChange(r.id, e.target.value)}
+                    className={`px-2 py-1 rounded text-xs font-medium border border-gray-200 cursor-pointer ${PAYMENT_CONFIG[r.paymentStatus]?.pill || "bg-gray-100 text-gray-600"}`}>
+                    {Object.entries(PAYMENT_CONFIG).map(([k, v]) => (
+                      <option key={k} value={k}>{v.label}</option>
+                    ))}
+                  </select>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1 justify-center flex-wrap">
                     {r.status !== "CANCELLED" && r.status !== "COMPLETED" && (
-                      <button
-                        onClick={() => handleStatusChange(r.id, "CANCELLED")}
-                        className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50 transition"
-                      >
+                      <button onClick={() => handleStatusChange(r.id, "CANCELLED")}
+                        className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50 transition">
                         Cancelar
                       </button>
                     )}
-                    <button
-                      onClick={() => navigate(`/reservas/${r.id}`)}
-                      className="text-xs px-2 py-1 bg-primary text-white rounded hover:bg-primary-dark transition"
-                    >
+                    {/* Fix: navegar a ruta del admin, no del cliente */}
+                    <button onClick={() => navigate(`/admin/reservas/${r.id}`)}
+                      className="text-xs px-2 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
                       Ver
                     </button>
                   </div>

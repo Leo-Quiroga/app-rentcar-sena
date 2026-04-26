@@ -7,6 +7,7 @@ import com.autoreserve.backend.dto.car.CarModelResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,18 @@ public class CarController {
             @RequestParam(required = false) Long categoryId) {
 
         List<CarModel> models = carModelRepository.findModelsWithAvailableUnits(categoryId);
+        List<CarModelResponse> response = toResponseList(models);
+        return ResponseEntity.ok(response);
+    }
+
+    /** Buscar modelos disponibles en fechas específicas */
+    @GetMapping("/available")
+    public ResponseEntity<List<CarModelResponse>> getAvailableModelsForDates(
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate,
+            @RequestParam(required = false) Long categoryId) {
+
+        List<CarModel> models = carModelRepository.findAvailableModels(startDate, endDate, categoryId);
         List<CarModelResponse> response = toResponseList(models);
         return ResponseEntity.ok(response);
     }

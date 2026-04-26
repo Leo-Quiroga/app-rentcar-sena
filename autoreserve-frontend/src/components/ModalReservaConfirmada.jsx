@@ -33,7 +33,13 @@ export default function ModalReservaConfirmada({ reserva, onClose }) {
           <p><strong>Precio/día:</strong> ${reservation.pricePerDay}</p>
           <p className="text-lg font-bold text-primary"><strong>Total:</strong> ${reservation.totalAmount}</p>
           <p className="text-sm text-orange-600">
-            <strong>Estado Pago:</strong> {reservation.paymentStatus === 'PENDING' ? 'Pendiente' : reservation.paymentStatus}
+            <strong>Estado Pago:</strong> {
+              reservation.paymentStatus === 'NO_PAYMENT' ? 'Pendiente de pago' :
+              reservation.paymentStatus === 'PAID' ? 'Pagado' :
+              reservation.paymentStatus === 'REFUND_PENDING' ? 'Reembolso en proceso' :
+              reservation.paymentStatus === 'REFUNDED' ? 'Reembolsado' :
+              reservation.paymentStatus
+            }
           </p>
         </div>
 
@@ -81,7 +87,7 @@ export default function ModalReservaConfirmada({ reserva, onClose }) {
               >
                 Ver Detalle
               </button>
-              {reservation.paymentStatus === 'PENDING' && (
+              {reservation.paymentStatus === 'NO_PAYMENT' && (
                 <button
                   onClick={() => {
                     onClose && onClose();
@@ -93,15 +99,16 @@ export default function ModalReservaConfirmada({ reserva, onClose }) {
                           carModel: reservation.carModel,
                           startDate: reservation.startDate,
                           endDate: reservation.endDate,
-                          branchName: reservation.pickupBranchName,
+                          pickupBranchName: reservation.pickupBranchName,
+                          dropoffBranchName: reservation.dropoffBranchName,
                           estimatedTotal: reservation.totalAmount
                         }
                       } 
                     });
                   }}
-                  className="px-4 py-2 bg-secondary text-gray-900 rounded hover:bg-secondary-dark"
+                  className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 font-semibold"
                 >
-                  Pagar Ahora
+                  💳 Pagar Ahora
                 </button>
               )}
             </>

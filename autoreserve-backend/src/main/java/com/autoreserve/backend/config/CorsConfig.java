@@ -24,7 +24,8 @@ public class CorsConfig {
 
         // Especifica los orígenes permitidos (URL del frontend en desarrollo)
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173/"
+                "http://localhost:5173",
+                "http://localhost:3000"
         ));
 
         // Define los métodos HTTP autorizados para las peticiones

@@ -107,7 +107,7 @@ export default function Checkout() {
       return;
     }
 
-    // Pago exitoso → confirmar en el backend
+    // Pago exitoso → confirmar en el backend (verifica disponibilidad internamente)
     try {
       const confirmed = await confirmPayment(reservationData.reservationId);
       setProcessing(false);
@@ -116,7 +116,12 @@ export default function Checkout() {
       });
     } catch (err) {
       setProcessing(false);
-      setError("Error al confirmar el pago: " + err.message);
+      // El backend retorna error claro si no hay unidades disponibles
+      if (err.message && err.message.includes("no hay unidades disponibles")) {
+        setError("⚠️ " + err.message + " Tu reserva permanece pendiente pero no puede ser pagada.");
+      } else {
+        setError("Error al confirmar el pago: " + err.message);
+      }
     }
   };
 

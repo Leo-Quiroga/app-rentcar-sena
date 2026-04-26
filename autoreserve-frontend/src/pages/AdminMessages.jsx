@@ -1,16 +1,17 @@
 // Gestor de mensajes de soporte para el administrador
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAdminTickets, getAdminTicketDetail, adminReply, adminCloseTicket } from "../api/contactApi";
+import { getAdminTickets, getAdminTicketDetail, adminReply, adminCloseTicket, adminStartConversation } from "../api/contactApi";
+import { getUsers } from "../api/adminUsersApi";
 
 const normalize = (str) =>
   String(str ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 const STATUS_CONFIG = {
-  OPEN:        { label: "Abierto",       pill: "bg-red-100 text-red-700" },
-  IN_PROGRESS: { label: "En revisión",   pill: "bg-yellow-100 text-yellow-700" },
-  ANSWERED:    { label: "Respondido",    pill: "bg-blue-100 text-blue-700" },
-  CLOSED:      { label: "Cerrado",       pill: "bg-gray-100 text-gray-500" },
+  OPEN:        { label: "Abierto",     pill: "bg-red-100 text-red-700" },
+  IN_PROGRESS: { label: "En revisión", pill: "bg-yellow-100 text-yellow-700" },
+  ANSWERED:    { label: "Respondido",  pill: "bg-blue-100 text-blue-700" },
+  CLOSED:      { label: "Cerrado",     pill: "bg-gray-100 text-gray-500" },
 };
 
 const TYPE_CONFIG = {
@@ -20,6 +21,8 @@ const TYPE_CONFIG = {
   SOLICITUD:    { label: "Solicitud",    color: "text-purple-600" },
   FELICITACION: { label: "Felicitación", color: "text-green-600" },
 };
+
+const MESSAGE_TYPES = Object.entries(TYPE_CONFIG).map(([k, v]) => ({ value: k, label: v.label }));
 
 function StatusPill({ status }) {
   const s = STATUS_CONFIG[status] || { label: status, pill: "bg-gray-100 text-gray-600" };
@@ -31,7 +34,125 @@ function SortIcon({ col, sortCol, sortDir }) {
   return <span className="ml-1">{sortDir === "asc" ? "↑" : "↓"}</span>;
 }
 
-// Componente del hilo de conversación
+// Modal para nuevo mensaje del admin a un cliente
+function NewMessageModal({ onClose, onSent }) {
+  const [users, setUsers] = useState([]);
+  const [clientSearch, setClientSearch] = useState("");
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [form, setForm] = useState({ subject: "", type: "SOLICITUD", message: "" });
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getUsers()
+      .then(data => setUsers((data.content || data.users || []).filter(u => u.role === "CLIENT")))
+      .catch(() => {});
+  }, []);
+
+  const filteredClients = users.filter(u =>
+    !clientSearch ||
+    normalize(`${u.firstName} ${u.lastName}`).includes(normalize(clientSearch)) ||
+    normalize(u.email).includes(normalize(clientSearch)) ||
+    String(u.id).includes(clientSearch)
+  ).slice(0, 6);
+
+  const handleSend = async () => {
+    if (!selectedClient) { setError("Selecciona un cliente destinatario."); return; }
+    if (!form.subject.trim()) { setError("El asunto es obligatorio."); return; }
+    if (!form.message.trim()) { setError("El mensaje es obligatorio."); return; }
+    setSending(true); setError("");
+    try {
+      await adminStartConversation({ userId: String(selectedClient.id), ...form });
+      onSent();
+    } catch (err) { setError(err.message); }
+    finally { setSending(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-800">✉️ Nuevo mensaje a cliente</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+        </div>
+
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">{error}</div>}
+
+        {/* Buscador de cliente */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Cliente destinatario *</label>
+          {selectedClient ? (
+            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded px-3 py-2">
+              <div>
+                <p className="text-sm font-medium text-gray-800">{selectedClient.firstName} {selectedClient.lastName}</p>
+                <p className="text-xs text-gray-500">{selectedClient.email}</p>
+              </div>
+              <button onClick={() => { setSelectedClient(null); setClientSearch(""); }}
+                className="text-xs text-red-500 hover:text-red-700">Cambiar</button>
+            </div>
+          ) : (
+            <div className="relative">
+              <input type="text" placeholder="Buscar por nombre, email o ID..."
+                value={clientSearch} onChange={e => setClientSearch(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+              {clientSearch && filteredClients.length > 0 && (
+                <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-b shadow-lg max-h-40 overflow-y-auto">
+                  {filteredClients.map(u => (
+                    <div key={u.id} onClick={() => { setSelectedClient(u); setClientSearch(""); }}
+                      className="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
+                      <p className="text-sm font-medium">{u.firstName} {u.lastName}</p>
+                      <p className="text-xs text-gray-400">#{u.id} · {u.email}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {clientSearch && filteredClients.length === 0 && (
+                <p className="text-xs text-gray-400 mt-1">No se encontraron clientes.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Tipo y asunto */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
+            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary">
+              {MESSAGE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Asunto *</label>
+            <input type="text" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
+              placeholder="Asunto del mensaje"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+          </div>
+        </div>
+
+        {/* Mensaje */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje *</label>
+          <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
+            rows={4} placeholder="Escribe el mensaje para el cliente..."
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary resize-none" />
+        </div>
+
+        <div className="flex gap-3 justify-end">
+          <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-100 transition">
+            Cancelar
+          </button>
+          <button onClick={handleSend} disabled={sending}
+            className="px-4 py-2 bg-primary text-white rounded text-sm hover:bg-primary-dark disabled:opacity-50 transition">
+            {sending ? "Enviando..." : "Enviar mensaje"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Hilo de conversación
 function TicketThread({ ticketId, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,11 +165,8 @@ function TicketThread({ ticketId, onClose }) {
     try {
       const res = await getAdminTicketDetail(ticketId);
       setData(res);
-    } catch (err) {
-      alert("Error: " + err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { alert("Error: " + err.message); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, [ticketId]);
@@ -57,21 +175,16 @@ function TicketThread({ ticketId, onClose }) {
   const handleReply = async () => {
     if (!reply.trim()) return;
     setSending(true);
-    try {
-      await adminReply(ticketId, reply);
-      setReply("");
-      await load();
-    } catch (err) { alert("Error: " + err.message); }
+    try { await adminReply(ticketId, reply); setReply(""); await load(); }
+    catch (err) { alert("Error: " + err.message); }
     finally { setSending(false); }
   };
 
   const handleClose = async () => {
     if (!window.confirm("¿Cerrar este ticket?")) return;
     setClosing(true);
-    try {
-      await adminCloseTicket(ticketId);
-      await load();
-    } catch (err) { alert("Error: " + err.message); }
+    try { await adminCloseTicket(ticketId); await load(); }
+    catch (err) { alert("Error: " + err.message); }
     finally { setClosing(false); }
   };
 
@@ -83,7 +196,6 @@ function TicketThread({ ticketId, onClose }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header del ticket */}
       <div className="px-6 py-4 border-b bg-gray-50 flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -94,8 +206,7 @@ function TicketThread({ ticketId, onClose }) {
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            De: <strong>{ticket.senderName}</strong> ({ticket.senderEmail}) ·{" "}
-            {new Date(ticket.createdAt).toLocaleString()}
+            De: <strong>{ticket.senderName}</strong> ({ticket.senderEmail}) · {new Date(ticket.createdAt).toLocaleString()}
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -105,21 +216,15 @@ function TicketThread({ ticketId, onClose }) {
               {closing ? "..." : "Cerrar ticket"}
             </button>
           )}
-          <button onClick={onClose}
-            className="text-xs px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 transition">
-            ✕ Cerrar
-          </button>
+          <button onClick={onClose} className="text-xs px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 transition">✕</button>
         </div>
       </div>
 
-      {/* Hilo de mensajes */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-white" style={{ maxHeight: "400px" }}>
         {replies.map(r => (
           <div key={r.id} className={`flex ${r.sentBy === "ADMIN" ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-              r.sentBy === "ADMIN"
-                ? "bg-primary text-white rounded-br-none"
-                : "bg-gray-100 text-gray-800 rounded-bl-none"
+              r.sentBy === "ADMIN" ? "bg-primary text-white rounded-br-none" : "bg-gray-100 text-gray-800 rounded-bl-none"
             }`}>
               <p className={`text-xs font-semibold mb-1 ${r.sentBy === "ADMIN" ? "text-blue-100" : "text-gray-500"}`}>
                 {r.authorName}
@@ -134,28 +239,23 @@ function TicketThread({ ticketId, onClose }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Caja de respuesta */}
       {!isClosed ? (
         <div className="px-6 py-4 border-t bg-gray-50">
           <div className="flex gap-3">
-            <textarea
-              value={reply}
-              onChange={e => setReply(e.target.value)}
-              placeholder="Escribe tu respuesta..."
+            <textarea value={reply} onChange={e => setReply(e.target.value)}
+              placeholder="Escribe tu respuesta... (Ctrl+Enter para enviar)"
               rows={3}
               className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary resize-none"
-              onKeyDown={e => { if (e.key === "Enter" && e.ctrlKey) handleReply(); }}
-            />
+              onKeyDown={e => { if (e.key === "Enter" && e.ctrlKey) handleReply(); }} />
             <button onClick={handleReply} disabled={sending || !reply.trim()}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 transition text-sm self-end">
               {sending ? "..." : "Enviar"}
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-1">Ctrl+Enter para enviar</p>
         </div>
       ) : (
         <div className="px-6 py-3 border-t bg-gray-50 text-center text-sm text-gray-500">
-          Este ticket está cerrado. No se pueden agregar más respuestas.
+          Este ticket está cerrado.
         </div>
       )}
     </div>
@@ -167,6 +267,7 @@ export default function AdminMessages() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
+  const [showNewModal, setShowNewModal] = useState(false);
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -174,12 +275,13 @@ export default function AdminMessages() {
   const [sortCol, setSortCol] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
 
-  useEffect(() => {
+  const loadTickets = () =>
     getAdminTickets()
       .then(setTickets)
       .catch(err => alert("Error: " + err.message))
       .finally(() => setLoading(false));
-  }, []);
+
+  useEffect(() => { loadTickets(); }, []);
 
   const handleSort = (col) => {
     if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -214,6 +316,13 @@ export default function AdminMessages() {
 
   return (
     <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+      {showNewModal && (
+        <NewMessageModal
+          onClose={() => setShowNewModal(false)}
+          onSent={() => { setShowNewModal(false); loadTickets(); }}
+        />
+      )}
+
       <div className="mb-6">
         <button onClick={() => navigate("/admin")} className="text-primary hover:underline text-sm mb-2">
           ← Volver al Dashboard
@@ -223,6 +332,10 @@ export default function AdminMessages() {
             <h1 className="text-2xl font-bold text-neutral-dark">💬 Gestor de Mensajes</h1>
             <p className="text-sm text-gray-500 mt-1">{sorted.length} mensaje(s)</p>
           </div>
+          <button onClick={() => setShowNewModal(true)}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm">
+            ✉️ Nuevo mensaje
+          </button>
         </div>
       </div>
 
@@ -235,16 +348,12 @@ export default function AdminMessages() {
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
             className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary">
             <option value="">Todos los estados</option>
-            {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-              <option key={k} value={k}>{v.label}</option>
-            ))}
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
           <select value={filterType} onChange={e => setFilterType(e.target.value)}
             className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary">
             <option value="">Todos los tipos</option>
-            {Object.entries(TYPE_CONFIG).map(([k, v]) => (
-              <option key={k} value={k}>{v.label}</option>
-            ))}
+            {MESSAGE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
         {hasFilters && (
@@ -262,12 +371,12 @@ export default function AdminMessages() {
             <thead className="bg-gray-50 border-b">
               <tr>
                 {[
-                  { col: "id",          label: "ID" },
-                  { col: "senderName",  label: "Remitente" },
-                  { col: "subject",     label: "Asunto" },
-                  { col: "type",        label: "Tipo" },
-                  { col: "status",      label: "Estado" },
-                  { col: "createdAt",   label: "Fecha" },
+                  { col: "id",         label: "ID" },
+                  { col: "senderName", label: "Remitente" },
+                  { col: "subject",    label: "Asunto" },
+                  { col: "type",       label: "Tipo" },
+                  { col: "status",     label: "Estado" },
+                  { col: "createdAt",  label: "Fecha" },
                 ].map(({ col, label }) => (
                   <th key={col} onClick={() => handleSort(col)}
                     className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
@@ -280,23 +389,21 @@ export default function AdminMessages() {
             <tbody>
               {sorted.map(t => (
                 <tr key={t.id}
-                  className={`border-t hover:bg-gray-50 transition cursor-pointer ${selectedId === t.id ? "bg-blue-50" : ""}`}
+                  className={`border-t hover:bg-gray-50 transition cursor-pointer ${selectedId === t.id ? "bg-blue-50" : ""} ${t.status === "OPEN" ? "font-semibold" : ""}`}
                   onClick={() => setSelectedId(t.id)}>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500">#{t.id}</td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-gray-800">{t.senderName}</p>
+                    <p className="text-gray-800">{t.senderName}</p>
                     <p className="text-xs text-gray-400">{t.senderEmail}</p>
                   </td>
-                  <td className="px-4 py-3 text-sm max-w-[200px] truncate">{t.subject}</td>
+                  <td className="px-4 py-3 text-sm max-w-[180px] truncate">{t.subject}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-medium ${TYPE_CONFIG[t.type]?.color || "text-gray-600"}`}>
                       {TYPE_CONFIG[t.type]?.label || t.type}
                     </span>
                   </td>
                   <td className="px-4 py-3"><StatusPill status={t.status} /></td>
-                  <td className="px-4 py-3 text-xs text-gray-500">
-                    {new Date(t.createdAt).toLocaleDateString()}
-                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-500">{new Date(t.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-center">
                     <button onClick={e => { e.stopPropagation(); setSelectedId(t.id); }}
                       className="text-xs px-3 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
@@ -319,10 +426,7 @@ export default function AdminMessages() {
         {/* Panel de conversación */}
         {selectedId && (
           <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col">
-            <TicketThread
-              ticketId={selectedId}
-              onClose={() => setSelectedId(null)}
-            />
+            <TicketThread ticketId={selectedId} onClose={() => setSelectedId(null)} />
           </div>
         )}
       </div>
