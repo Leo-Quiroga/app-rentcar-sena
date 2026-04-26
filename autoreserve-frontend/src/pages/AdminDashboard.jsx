@@ -140,6 +140,14 @@ export default function AdminDashboard() {
             <span className="text-4xl mb-2">📜</span>
             <p className="text-lg font-semibold">Políticas</p>
           </Link>
+
+          <Link
+            to="/admin/mensajes"
+            className="bg-white shadow rounded-lg p-6 flex flex-col items-center hover:bg-gray-50 transition"
+          >
+            <span className="text-4xl mb-2">💬</span>
+            <p className="text-lg font-semibold">Mensajes de Soporte</p>
+          </Link>
         </div>
       </div>
     </div>

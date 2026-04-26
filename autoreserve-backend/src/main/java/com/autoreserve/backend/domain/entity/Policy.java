@@ -12,7 +12,7 @@ public class Policy {
     private Long id;
 
     @Column(nullable = false, length = 50)
-    private String slug; // identificador único, ej: "terms"
+    private String slug;
 
     @Column(nullable = false, length = 200)
     private String title;
@@ -23,8 +23,12 @@ public class Policy {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    private Integer sortOrder;
+
     public Policy() {
         this.updatedAt = LocalDateTime.now();
+        this.sortOrder = 0;
     }
 
     public Long getId() { return id; }
@@ -37,4 +41,6 @@ public class Policy {
     public void setContent(String content) { this.content = content; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public Integer getSortOrder() { return sortOrder; }
+    public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
 }

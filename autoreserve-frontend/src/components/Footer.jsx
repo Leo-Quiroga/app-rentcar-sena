@@ -1,12 +1,15 @@
 // Componente para el pie de página
-// src/components/Footer.jsx
 import { Link } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 export default function Footer() {
+  const { user } = useAuth();
+  const isLoggedIn = Boolean(user);
+
   return (
     <footer className="bg-neutral-dark text-gray-300 py-6 mt-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-        
+
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img
@@ -23,16 +26,18 @@ export default function Footer() {
         </p>
 
         {/* Links secundarios */}
-        <nav aria-label="Enlaces secundarios" className="flex gap-6 text-sm">
+        <nav aria-label="Enlaces secundarios" className="flex flex-wrap justify-center gap-6 text-sm">
           <Link to="/politicas" className="hover:text-secondary transition">
             Políticas
           </Link>
           <Link to="/contacto" className="hover:text-secondary transition">
-            Contacto
+            Contacto y FAQ
           </Link>
-          <Link to="/faq" className="hover:text-secondary transition">
-            Dudas / FAQ
-          </Link>
+          {isLoggedIn && (
+            <Link to="/mis-mensajes" className="hover:text-secondary transition">
+              Mis mensajes
+            </Link>
+          )}
         </nav>
       </div>
     </footer>

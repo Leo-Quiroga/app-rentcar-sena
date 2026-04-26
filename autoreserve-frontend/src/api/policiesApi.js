@@ -4,9 +4,20 @@ export function getPolicies() {
   return apiFetch("/api/policies");
 }
 
-export function updatePolicy(slug, data) {
-  return apiFetch(`/api/policies/${slug}`, {
+export function createPolicy(data) {
+  return apiFetch("/api/policies", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updatePolicy(id, data) {
+  return apiFetch(`/api/policies/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
+}
+
+export function deletePolicy(id) {
+  return apiFetch(`/api/policies/${id}`, { method: "DELETE" });
 }

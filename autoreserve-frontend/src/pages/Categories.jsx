@@ -3,6 +3,9 @@ import { useState, useMemo, useEffect } from "react";
 import CategoryCard from "../components/CategoryCard";
 import { getCategories } from "../api/categoriesApi";
 
+const normalize = (str) =>
+  String(str ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 export default function Categories() {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("name_asc");
@@ -32,7 +35,7 @@ export default function Categories() {
   // Filtrado + ordenamiento
   const filtered = useMemo(() => {
     const result = categories.filter((c) =>
-      c.name.toLowerCase().includes(q.trim().toLowerCase())
+      normalize(c.name).includes(normalize(q.trim()))
     );
 
     // No mutamos el array original: creamos copia antes de ordenar

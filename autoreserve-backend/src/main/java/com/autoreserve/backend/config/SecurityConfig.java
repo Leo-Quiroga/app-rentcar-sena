@@ -79,6 +79,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/branches/**").permitAll()
                         .requestMatchers("/api/search/**").permitAll()
                         .requestMatchers("/api/policies/**").permitAll()
+                        .requestMatchers("/api/faq/**").permitAll()
+                        .requestMatchers("/api/contact").permitAll()
                         .requestMatchers("/error").permitAll()
                         // Endpoints de perfil propio - cualquier usuario autenticado
                         .requestMatchers("/api/admin/users/me").authenticated()

@@ -43,11 +43,13 @@ import AdminSedes from "../pages/AdminSedes";
 import AdminSedeForm from "../pages/AdminSedeForm";
 import AdminReservations from "../pages/AdminReservations";
 import AllReservations from "../pages/AllReservations";
+import AdminMessages from "../pages/AdminMessages";
 
 // Soporte y legales
 import Contact from "../pages/Contact";
 import Policies from "../pages/Policies";
 import SupportTicket from "../pages/SupportTicket";
+import MyMessages from "../pages/MyMessages";
 
 // Error
 import Error404 from "../pages/Error404";
@@ -222,6 +224,16 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/mis-mensajes"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <MyMessages />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
 
       {/* ========= Administración ========= */}
       <Route
@@ -352,6 +364,16 @@ export default function AppRoutes() {
           <AdminRoute>
             <MainLayout>
               <AdminReservations />
+            </MainLayout>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/mensajes"
+        element={
+          <AdminRoute>
+            <MainLayout>
+              <AdminMessages />
             </MainLayout>
           </AdminRoute>
         }
