@@ -149,6 +149,44 @@ public class AdminReservationController {
                     .orElseThrow(() -> new RuntimeException("Reserva no encontrada con ID: " + id));
 
             ReservationStatus newStatus = ReservationStatus.valueOf(status.toUpperCase());
+            ReservationStatus oldStatus = reservation.getStatus();
+
+            // VALIDACIÓN ESTRICTA: Si cambia de PENDING a CONFIRMED
+            if (oldStatus == ReservationStatus.PENDING && newStatus == ReservationStatus.CONFIRMED) {
+                // 1. Verificar que el pago esté confirmado PRIMERO
+                if (reservation.getPaymentStatus() != PaymentStatus.PAID) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                        "success", false, 
+                        "error", "No se puede confirmar una reserva sin pago. Debe cambiar PRIMERO el estado de pago a PAID."
+                    ));
+                }
+                
+                // 2. Buscar auto disponible del modelo para las fechas
+                List<Car> availableUnits = carRepository.findAvailableUnitForModel(
+                        reservation.getCarModel().getId(),
+                        reservation.getStartDate(),
+                        reservation.getEndDate());
+
+                // 3. Si no hay autos disponibles, BLOQUEAR el cambio
+                if (availableUnits.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                            "success", false,
+                            "error", "No se puede confirmar la reserva: No hay unidades disponibles del modelo " + 
+                                   reservation.getCarModel().getBrand() + " " + reservation.getCarModel().getModel() + 
+                                   " para las fechas " + reservation.getStartDate() + " - " + reservation.getEndDate() + 
+                                   ". La reserva permanece en estado PENDING."
+                    ));
+                }
+
+                // 4. Asignar la primera unidad disponible y marcarla como RENTED
+                Car assignedCar = availableUnits.get(0);
+                assignedCar.setStatus(CarStatus.RENTED);
+                carRepository.save(assignedCar);
+                reservation.setCar(assignedCar);
+                
+                System.out.println("✅ Admin confirmó reserva " + id + ": Auto " + assignedCar.getPlate() + 
+                                 " (ID: " + assignedCar.getId() + ") asignado y marcado como RENTED");
+            }
 
             // Si cancela una reserva CONFIRMED, liberar el auto
             if (newStatus == ReservationStatus.CANCELLED && reservation.getCar() != null
@@ -156,19 +194,27 @@ public class AdminReservationController {
                 reservation.getCar().setStatus(CarStatus.AVAILABLE);
                 carRepository.save(reservation.getCar());
                 reservation.setPaymentStatus(PaymentStatus.REFUND_PENDING);
+                System.out.println("🔓 Auto " + reservation.getCar().getPlate() + " liberado por cancelación de reserva " + id);
             }
 
             // Si completa, liberar el auto
             if (newStatus == ReservationStatus.COMPLETED && reservation.getCar() != null) {
                 reservation.getCar().setStatus(CarStatus.AVAILABLE);
                 carRepository.save(reservation.getCar());
+                System.out.println("🔓 Auto " + reservation.getCar().getPlate() + " liberado por completar reserva " + id);
             }
 
             reservation.setStatus(newStatus);
             reservationRepository.save(reservation);
 
-            return ResponseEntity.ok(Map.of("success", true, "message", "Estado actualizado exitosamente",
-                    "reservationId", id, "newStatus", newStatus.name()));
+            return ResponseEntity.ok(Map.of(
+                "success", true, 
+                "message", "Estado actualizado exitosamente" + 
+                          (reservation.getCar() != null ? ". Auto " + reservation.getCar().getPlate() + " asignado." : ""),
+                "reservationId", id, 
+                "newStatus", newStatus.name(),
+                "assignedCarId", reservation.getCar() != null ? reservation.getCar().getId() : null
+            ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Estado inválido: " + status));
         } catch (RuntimeException e) {

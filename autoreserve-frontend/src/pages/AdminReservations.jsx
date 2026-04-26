@@ -75,11 +75,21 @@ export default function AdminReservations() {
   const handleStatusChange = async (reservationId, newStatus) => {
     try {
       await updateReservationStatus(reservationId, newStatus);
+      // Actualizar el estado local inmediatamente
       setReservations(prev =>
         prev.map(r => r.id === reservationId ? { ...r, status: newStatus } : r)
       );
+      
+      // Mostrar mensaje de éxito si se asignó auto
+      if (newStatus === 'CONFIRMED') {
+        // Recargar la reserva para obtener el auto asignado
+        setTimeout(() => loadReservations(), 500);
+      }
     } catch (err) {
-      alert("Error actualizando estado: " + err.message);
+      // Mostrar error detallado al admin
+      const errorMessage = err.message || 'Error actualizando estado';
+      alert(`Error: ${errorMessage}`);
+      console.error('Error actualizando estado:', err);
     }
   };
 
@@ -194,6 +204,11 @@ export default function AdminReservations() {
 
       {/* Tabla */}
       <div className="bg-white shadow rounded-lg overflow-x-auto">
+        {/* Nota informativa para admins */}
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-3 text-sm text-blue-700">
+          <p><strong>📝 Importante:</strong> Para confirmar una reserva PENDING, primero cambia el estado de pago a <strong>PAID</strong>, luego cambia el estado a <strong>CONFIRMED</strong>. El sistema asignará automáticamente un auto disponible.</p>
+        </div>
+        
         <table className="w-full table-auto text-sm">
           <thead className="bg-gray-50 text-left border-b">
             <tr>
