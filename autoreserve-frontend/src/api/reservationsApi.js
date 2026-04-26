@@ -26,3 +26,10 @@ export function cancelReservation(id) {
     method: "PUT",
   });
 }
+
+// Confirmar pago de reserva
+export function confirmPayment(id) {
+  return apiFetch(`/api/reservations/${id}/confirm-payment`, {
+    method: "PUT",
+  });
+}

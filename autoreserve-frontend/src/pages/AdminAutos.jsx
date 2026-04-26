@@ -1,156 +1,335 @@
-// Pantalla de administración de autos para el administrador
+// Gestión de autos - vista por modelo con unidades desplegables
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { getAdminCars, deleteCar } from "../api/adminCarsApi";
+import { useNavigate } from "react-router-dom";
+import { getAdminCarModels, deleteCarModel, getUnitsByModel, updateCarUnit, deleteCarUnit } from "../api/adminCarsApi";
+
+const STATUS_LABEL = {
+  PENDING_REGISTRATION: { text: "Pendiente de identificación", color: "text-orange-600", bg: "bg-orange-100" },
+  AVAILABLE:            { text: "Disponible",                  color: "text-green-600",  bg: "bg-green-100" },
+  RENTED:               { text: "Rentado",                     color: "text-blue-600",   bg: "bg-blue-100" },
+  MAINTENANCE:          { text: "En mantenimiento",            color: "text-yellow-600", bg: "bg-yellow-100" },
+  OUT_OF_SERVICE:       { text: "Fuera de servicio",           color: "text-red-600",    bg: "bg-red-100" },
+};
+
+function StatusPill({ status }) {
+  const s = STATUS_LABEL[status] || { text: status, color: "text-gray-600", bg: "bg-gray-100" };
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${s.bg} ${s.color}`}>
+      {s.text}
+    </span>
+  );
+}
+
+function UnitRow({ unit, onSave, onDelete }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    plate: unit.plate || "",
+    color: unit.color || "",
+    status: unit.status || "PENDING_REGISTRATION",
+    branchId: unit.branchId || "",
+    notes: unit.notes || "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSave = async () => {
+    setError("");
+    setSaving(true);
+    try {
+      await onSave(unit.id, form);
+      setEditing(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (editing) {
+    return (
+      <tr className="bg-blue-50 border-t">
+        <td className="px-4 py-2">
+          <input
+            value={form.plate}
+            onChange={e => setForm({ ...form, plate: e.target.value })}
+            placeholder="Placa"
+            className="border rounded px-2 py-1 text-xs w-24"
+          />
+        </td>
+        <td className="px-4 py-2">
+          <input
+            value={form.color}
+            onChange={e => setForm({ ...form, color: e.target.value })}
+            placeholder="Color"
+            className="border rounded px-2 py-1 text-xs w-24"
+          />
+        </td>
+        <td className="px-4 py-2">
+          <select
+            value={form.status}
+            onChange={e => setForm({ ...form, status: e.target.value })}
+            className="border rounded px-2 py-1 text-xs"
+          >
+            {Object.entries(STATUS_LABEL).map(([k, v]) => (
+              <option key={k} value={k}>{v.text}</option>
+            ))}
+          </select>
+        </td>
+        <td className="px-4 py-2">
+          <input
+            value={form.notes}
+            onChange={e => setForm({ ...form, notes: e.target.value })}
+            placeholder="Notas"
+            className="border rounded px-2 py-1 text-xs w-32"
+          />
+        </td>
+        <td className="px-4 py-2 text-xs text-gray-500">{unit.branchName}</td>
+        <td className="px-4 py-2">
+          {error && <p className="text-red-500 text-xs mb-1">{error}</p>}
+          <div className="flex gap-1">
+            <button onClick={handleSave} disabled={saving}
+              className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50">
+              {saving ? "..." : "Guardar"}
+            </button>
+            <button onClick={() => { setEditing(false); setError(""); }}
+              className="text-xs px-2 py-1 bg-gray-300 rounded hover:bg-gray-400">
+              Cancelar
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr className="border-t hover:bg-gray-50">
+      <td className="px-4 py-2 text-xs font-mono">{unit.plate || <span className="text-gray-400 italic">Sin placa</span>}</td>
+      <td className="px-4 py-2 text-xs">{unit.color || <span className="text-gray-400 italic">Sin color</span>}</td>
+      <td className="px-4 py-2"><StatusPill status={unit.status} /></td>
+      <td className="px-4 py-2 text-xs text-gray-500">{unit.notes || "—"}</td>
+      <td className="px-4 py-2 text-xs text-gray-500">{unit.branchName}</td>
+      <td className="px-4 py-2">
+        <div className="flex gap-1">
+          <button onClick={() => setEditing(true)}
+            className="text-xs px-2 py-1 text-yellow-600 border border-yellow-200 rounded hover:bg-yellow-50">
+            ✏️ Identificar
+          </button>
+          <button onClick={() => onDelete(unit.id)}
+            className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50">
+            🗑️
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function ModelRow({ model, onDelete }) {
+  const [expanded, setExpanded] = useState(false);
+  const [units, setUnits] = useState([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+  const navigate = useNavigate();
+
+  const loadUnits = async () => {
+    if (expanded) { setExpanded(false); return; }
+    setLoadingUnits(true);
+    try {
+      const data = await getUnitsByModel(model.id);
+      setUnits(data);
+      setExpanded(true);
+    } catch (err) {
+      alert("Error cargando unidades: " + err.message);
+    } finally {
+      setLoadingUnits(false);
+    }
+  };
+
+  const handleSaveUnit = async (unitId, form) => {
+    await updateCarUnit(unitId, form);
+    const data = await getUnitsByModel(model.id);
+    setUnits(data);
+  };
+
+  const handleDeleteUnit = async (unitId) => {
+    if (!window.confirm("¿Eliminar esta unidad?")) return;
+    await deleteCarUnit(unitId);
+    setUnits(prev => prev.filter(u => u.id !== unitId));
+  };
+
+  return (
+    <>
+      <tr className="border-t hover:bg-gray-50">
+        <td className="px-4 py-3 font-medium">{model.brand} {model.model}</td>
+        <td className="px-4 py-3 text-sm text-gray-500">{model.year}</td>
+        <td className="px-4 py-3 text-sm">{model.categoryName}</td>
+        <td className="px-4 py-3 text-sm">${model.pricePerDay?.toLocaleString()}</td>
+        <td className="px-4 py-3">
+          <span className="text-green-600 font-semibold">{model.availableUnits}</span>
+          <span className="text-gray-400"> / {model.totalUnits}</span>
+          <span className="text-xs text-gray-400 ml-1">disponibles</span>
+        </td>
+        <td className="px-4 py-3">
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={loadUnits}
+              className="text-xs px-2 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100">
+              {loadingUnits ? "..." : expanded ? "▲ Ocultar" : "▼ Ver unidades"}
+            </button>
+            <button onClick={() => navigate(`/admin/autos/editar/${model.id}`)}
+              className="text-xs px-2 py-1 text-yellow-600 border border-yellow-200 rounded hover:bg-yellow-50">
+              ✏️ Editar
+            </button>
+            <button onClick={() => onDelete(model.id, `${model.brand} ${model.model}`)}
+              className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50">
+              🗑️ Eliminar
+            </button>
+          </div>
+        </td>
+      </tr>
+
+      {/* Unidades desplegables */}
+      {expanded && (
+        <tr>
+          <td colSpan="6" className="px-0 py-0 bg-gray-50">
+            <div className="px-8 py-3">
+              <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                Unidades de {model.brand} {model.model}
+              </p>
+              {units.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No hay unidades registradas.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs text-gray-500 border-b">
+                      <th className="px-4 py-1 text-left">Placa</th>
+                      <th className="px-4 py-1 text-left">Color</th>
+                      <th className="px-4 py-1 text-left">Estado</th>
+                      <th className="px-4 py-1 text-left">Notas</th>
+                      <th className="px-4 py-1 text-left">Sede</th>
+                      <th className="px-4 py-1 text-left">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {units.map(unit => (
+                      <UnitRow
+                        key={unit.id}
+                        unit={unit}
+                        onSave={handleSaveUnit}
+                        onDelete={handleDeleteUnit}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
 
 export default function AdminAutos() {
   const navigate = useNavigate();
-  const [autos, setAutos] = useState([]);
+  const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
 
-  // Cargar autos desde la API
-  useEffect(() => {
-    loadAutos();
-  }, []);
+  useEffect(() => { loadModels(); }, []);
 
-  const loadAutos = async () => {
+  const loadModels = async () => {
     try {
       setLoading(true);
-      const data = await getAdminCars();
-      setAutos(data);
+      const data = await getAdminCarModels();
+      setModels(data);
       setError(null);
     } catch (err) {
       setError(err.message);
-      console.error('Error cargando autos:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteCar = async (carId, carModel) => {
-    if (!window.confirm(`¿Estás seguro de eliminar el auto ${carModel}?`)) {
-      return;
-    }
-
+  const handleDeleteModel = async (id, name) => {
+    if (!window.confirm(`¿Eliminar el modelo "${name}" y todas sus unidades?`)) return;
     try {
-      await deleteCar(carId);
-      // Recargar la lista
-      await loadAutos();
-      alert('Auto eliminado exitosamente');
+      await deleteCarModel(id);
+      setModels(prev => prev.filter(m => m.id !== id));
     } catch (err) {
-      alert(`Error al eliminar: ${err.message}`);
+      alert("Error: " + err.message);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-neutral-light px-4 py-10 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center py-12">
-            <p className="text-gray-600">Cargando autos...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const filtered = models.filter(m =>
+    !search ||
+    m.brand?.toLowerCase().includes(search.toLowerCase()) ||
+    m.model?.toLowerCase().includes(search.toLowerCase()) ||
+    m.categoryName?.toLowerCase().includes(search.toLowerCase())
+  );
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-neutral-light px-4 py-10 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center py-12">
-            <p className="text-red-600">Error: {error}</p>
-            <button 
-              onClick={loadAutos}
-              className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
-            >
-              Reintentar
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="max-w-6xl mx-auto py-10 px-4 text-center">
+      <p className="text-gray-600">Cargando modelos...</p>
+    </div>
+  );
 
-  // Renderizar tabla de autos con acciones
+  if (error) return (
+    <div className="max-w-6xl mx-auto py-10 px-4 text-center">
+      <p className="text-red-600">Error: {error}</p>
+      <button onClick={loadModels} className="mt-4 px-4 py-2 bg-primary text-white rounded">Reintentar</button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-neutral-light px-4 py-10 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        {/* Encabezado */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <button 
-              onClick={() => navigate('/admin')}
-              className="text-primary hover:underline mb-2 text-sm"
-            >
+            <button onClick={() => navigate("/admin")} className="text-primary hover:underline text-sm mb-2">
               ← Volver al Dashboard
             </button>
-            <h1 className="text-2xl font-bold text-neutral-dark">🚗 Gestión de Autos</h1>
+            <h1 className="text-2xl font-bold text-neutral-dark">🚗 Gestión de Vehículos</h1>
+            <p className="text-sm text-gray-500 mt-1">{filtered.length} modelo(s) registrado(s)</p>
           </div>
-          <Link
-            to="/admin/autos/nuevo"
+          <button
+            onClick={() => navigate("/admin/autos/nuevo")}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
           >
-            + Nuevo Auto
-          </Link>
+            + Nuevo Modelo
+          </button>
         </div>
 
-        {/* Tabla de autos */}
+        {/* Buscador */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Buscar por marca, modelo o categoría..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm w-full max-w-md focus:ring-primary focus:border-primary"
+          />
+        </div>
+
         <div className="bg-white shadow rounded-lg overflow-x-auto">
           <table className="w-full table-auto text-sm">
-            <thead className="bg-gray-100 text-left">
+            <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-4 py-3">Marca</th>
-                <th className="px-4 py-3">Modelo</th>
-                <th className="px-4 py-3">Año</th>
-                <th className="px-4 py-3">Categoría</th>
-                <th className="px-4 py-3">Precio/día</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3 text-center">Acciones</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Modelo</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Año</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Categoría</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Precio/día</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Disponibilidad</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {autos.map((auto) => (
-                <tr key={auto.id} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-3">{auto.brand}</td>
-                  <td className="px-4 py-3">{auto.model}</td>
-                  <td className="px-4 py-3">{auto.year}</td>
-                  <td className="px-4 py-3">{auto.categoryName}</td>
-                  <td className="px-4 py-3">${auto.pricePerDay}</td>
-                  <td
-                    className={`px-4 py-3 font-medium ${
-                      auto.status === "AVAILABLE" ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {auto.status === "AVAILABLE" ? "Disponible" : auto.status}
-                  </td>
-                  <td className="px-4 py-3 flex gap-2 justify-center">
-                    <Link
-                      to={`/admin/autos/${auto.id}/calendario`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      📅 Calendario
-                    </Link>
-                    <Link
-                      to={`/admin/autos/editar/${auto.id}`}
-                      className="text-yellow-600 hover:underline"
-                    >
-                      ✏️ Editar
-                    </Link>
-                    <button
-                      className="text-red-600 hover:underline"
-                      onClick={() => handleDeleteCar(auto.id, auto.model)}
-                    >
-                      🗑️ Eliminar
-                    </button>
-                  </td>
-                </tr>
+              {filtered.map(model => (
+                <ModelRow key={model.id} model={model} onDelete={handleDeleteModel} />
               ))}
-              {autos.length === 0 && (
+              {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="text-center py-6 text-gray-500">
-                    No hay autos registrados.
+                  <td colSpan="6" className="text-center py-10 text-gray-500">
+                    {search ? "No se encontraron modelos." : "No hay modelos registrados."}
                   </td>
                 </tr>
               )}

@@ -32,7 +32,7 @@ public class AdminCategoryController {
                         category.getName(),
                         category.getDescription(),
                         category.getImage(),
-                        category.getCars() != null ? category.getCars().size() : 0
+                        category.getCarModels() != null ? category.getCarModels().size() : 0
                 ))
                 .toList();
         
@@ -49,7 +49,7 @@ public class AdminCategoryController {
                 category.getName(),
                 category.getDescription(),
                 category.getImage(),
-                category.getCars() != null ? category.getCars().size() : 0
+                category.getCarModels() != null ? category.getCarModels().size() : 0
         );
         
         return ResponseEntity.ok(response);
@@ -100,7 +100,7 @@ public class AdminCategoryController {
                 updated.getName(),
                 updated.getDescription(),
                 updated.getImage(),
-                updated.getCars() != null ? updated.getCars().size() : 0
+                updated.getCarModels() != null ? updated.getCarModels().size() : 0
         );
 
         return ResponseEntity.ok(response);
@@ -112,7 +112,7 @@ public class AdminCategoryController {
             Category category = categoryRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + id));
 
-            if (category.getCars() != null && !category.getCars().isEmpty()) {
+            if (category.getCarModels() != null && !category.getCarModels().isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("success", false, "error", "No se puede eliminar una categoría que tiene autos asociados"));
             }

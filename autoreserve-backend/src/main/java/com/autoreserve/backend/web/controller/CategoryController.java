@@ -28,7 +28,7 @@ public class CategoryController {
                         category.getName(),
                         category.getDescription(),
                         category.getImage(),
-                        category.getCars() != null ? category.getCars().size() : 0
+                        category.getCarModels() != null ? category.getCarModels().size() : 0
                 ))
                 .toList();
         
@@ -45,7 +45,7 @@ public class CategoryController {
                 category.getName(),
                 category.getDescription(),
                 category.getImage(),
-                category.getCars() != null ? category.getCars().size() : 0
+                category.getCarModels() != null ? category.getCarModels().size() : 0
         );
         
         return ResponseEntity.ok(response);

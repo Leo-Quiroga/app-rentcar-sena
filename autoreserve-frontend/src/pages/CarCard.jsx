@@ -6,11 +6,12 @@ export default function CarCard({ car, onDetail, onReserve, canReserve = false }
   const carName = car?.name || (car?.brand && car?.model ? `${car.brand} ${car.model}` : "Vehículo");
   const carCategory = car?.category || car?.categoryName || "Sin categoría";
   const availableUnits = car?.availableUnits ?? null;
+
   const isAvailable = availableUnits === null || availableUnits > 0;
 
   return (
     <article className="bg-white shadow-md rounded-lg overflow-hidden flex flex-col transition hover:shadow-lg">
-      {/* Imagen con badge de disponibilidad */}
+      {/* Imagen */}
       <div className="relative">
         <img
           src={getImageUrl(car?.image, 'car')}
@@ -18,9 +19,12 @@ export default function CarCard({ car, onDetail, onReserve, canReserve = false }
           className="h-40 w-full object-cover"
           onError={e => { e.target.src = getImageUrl(null, 'car'); }}
         />
+        {/* Badge de disponibilidad */}
         {availableUnits !== null && (
           <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
-            availableUnits > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            availableUnits > 0
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
           }`}>
             {availableUnits > 0 ? `${availableUnits} disponible(s)` : "No disponible"}
           </div>
@@ -38,6 +42,7 @@ export default function CarCard({ car, onDetail, onReserve, canReserve = false }
           </p>
         </div>
 
+        {/* Botones */}
         <div className="mt-4 flex gap-2">
           <button
             onClick={() => onDetail && onDetail(car)}

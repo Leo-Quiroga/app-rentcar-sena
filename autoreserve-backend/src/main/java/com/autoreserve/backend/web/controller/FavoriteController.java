@@ -1,16 +1,27 @@
 package com.autoreserve.backend.web.controller;
 
-import com.autoreserve.backend.domain.entity.*;
-import com.autoreserve.backend.domain.repository.*;
-import com.autoreserve.backend.dto.car.CarResponse;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.autoreserve.backend.domain.entity.Car;
+import com.autoreserve.backend.domain.entity.Favorite;
+import com.autoreserve.backend.domain.entity.User;
+import com.autoreserve.backend.domain.repository.CarRepository;
+import com.autoreserve.backend.domain.repository.FavoriteRepository;
+import com.autoreserve.backend.domain.repository.UserRepository;
+import com.autoreserve.backend.dto.car.CarResponse;
 
 @RestController
 @RequestMapping("/api/favorites")
@@ -38,19 +49,19 @@ public class FavoriteController {
         List<Favorite> favorites = favoriteRepository.findByUserOrderByCreatedAtDesc(user);
         
         List<CarResponse> cars = favorites.stream()
-                .map(favorite -> new CarResponse(
-                        favorite.getCar().getId(),
-                        favorite.getCar().getBrand(),
-                        favorite.getCar().getModel(),
-                        favorite.getCar().getYear(),
-                        favorite.getCar().getPlate(),
-                        favorite.getCar().getPricePerDay(),
-                        favorite.getCar().getStatus().name(),
-                        favorite.getCar().getCategory().getName(),
-                        favorite.getCar().getBranch().getName(),
-                        null
-                ))
-                .toList();
+        .map(favorite -> new CarResponse(
+                favorite.getCar().getId(),
+                favorite.getCar().getCarModel().getBrand(),
+                favorite.getCar().getCarModel().getModel(),
+                favorite.getCar().getCarModel().getYear(),
+                favorite.getCar().getPlate(),
+                favorite.getCar().getCarModel().getPricePerDay(),
+                favorite.getCar().getStatus().name(),
+                favorite.getCar().getCarModel().getCategory().getName(),
+                favorite.getCar().getBranch().getName(),
+                null
+        ))
+        .toList();
         
         return ResponseEntity.ok(cars);
     }

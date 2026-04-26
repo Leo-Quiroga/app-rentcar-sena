@@ -39,11 +39,11 @@ public class Category {
     private String image;
 
     /**
-     * Relación uno a muchos con la entidad Car.
-     * Representa la colección de vehículos que pertenecen a esta clasificación.
+     * Relación uno a muchos con la entidad CarModel.
+     * Representa los modelos de vehículos que pertenecen a esta clasificación.
      */
     @OneToMany(mappedBy = "category")
-    private List<Car> cars;
+    private List<CarModel> carModels;
 
     /**
      * Constructor por defecto para la instanciación de JPA.
@@ -85,11 +85,11 @@ public class Category {
         this.image = image;
     }
 
-    public List<Car> getCars() {
-        return cars;
+    public List<CarModel> getCarModels() {
+        return carModels;
     }
 
-    public void setCars(List<Car> cars) {
-        this.cars = cars;
+    public void setCarModels(List<CarModel> carModels) {
+        this.carModels = carModels;
     }
 }

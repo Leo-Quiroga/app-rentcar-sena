@@ -3,6 +3,7 @@ package com.autoreserve.backend.domain.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Entidad que representa la reserva de un vehículo por parte de un usuario.
@@ -94,10 +95,17 @@ public class Reservation {
     private BigDecimal pricePerDay;
 
     /**
+     * Fecha y hora de creación de la reserva. Usada para expirar reservas PENDING.
+     */
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    /**
      * Constructor por defecto para JPA.
      */
     public Reservation() {
         this.paymentStatus = PaymentStatus.PENDING;
+        this.createdAt = LocalDateTime.now();
     }
 
     /* ================= GETTERS & SETTERS ================= */
@@ -196,5 +204,9 @@ public class Reservation {
 
     public void setPricePerDay(BigDecimal pricePerDay) {
         this.pricePerDay = pricePerDay;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 }
