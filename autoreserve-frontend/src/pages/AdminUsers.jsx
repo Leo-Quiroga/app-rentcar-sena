@@ -1,7 +1,15 @@
-// Página de administración de usuarios
+// Gestión de usuarios con filtros y ordenadores
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUsers, deleteUser } from "../api/adminUsersApi";
+
+const normalize = (str) =>
+  String(str ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+function SortIcon({ col, sortCol, sortDir }) {
+  if (sortCol !== col) return <span className="ml-1 text-gray-300">↕</span>;
+  return <span className="ml-1">{sortDir === "asc" ? "↑" : "↓"}</span>;
+}
 
 export default function AdminUsers() {
   const navigate = useNavigate();
@@ -9,183 +17,183 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Cargar usuarios al montar el componente
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  // Filtros
+  const [search, setSearch] = useState("");
+  const [filterRole, setFilterRole] = useState("");
+
+  // Ordenamiento (por defecto: apellido)
+  const [sortCol, setSortCol] = useState("lastName");
+  const [sortDir, setSortDir] = useState("asc");
+
+  useEffect(() => { loadUsers(); }, []);
 
   const loadUsers = async () => {
     try {
       setLoading(true);
       const data = await getUsers();
-      // El backend ahora devuelve {success: true, data: PagedUserResponse}
       setUsers(data.content || data.users || []);
       setError(null);
     } catch (err) {
       setError(err.message);
-      console.error('Error cargando usuarios:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Manejar eliminación de usuario
-  const handleDelete = async (id, userName) => {
-    if (window.confirm(`¿Seguro que deseas eliminar al usuario ${userName}?`)) {
-      try {
-        await deleteUser(id);
-        setUsers((prev) => prev.filter((u) => u.id !== id));
-        alert("Usuario eliminado correctamente");
-      } catch (error) {
-        alert("No se pudo eliminar: " + error.message);
-      }
+  const handleSort = (col) => {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`¿Eliminar al usuario ${name}?`)) return;
+    try {
+      await deleteUser(id);
+      setUsers(prev => prev.filter(u => u.id !== id));
+    } catch (err) {
+      alert("No se pudo eliminar: " + err.message);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="w-full max-w-[1400px] mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="text-center py-12">
-          <p className="text-gray-600">Cargando usuarios...</p>
-        </div>
-      </div>
-    );
-  }
+  const filtered = users.filter(u => {
+    const term = normalize(search);
+    const matchSearch = !search ||
+      normalize(u.firstName).includes(term) ||
+      normalize(u.lastName).includes(term) ||
+      normalize(u.email).includes(term) ||
+      normalize(u.phone).includes(term) ||
+      String(u.id).includes(term);
+    const matchRole = !filterRole || u.role === filterRole;
+    return matchSearch && matchRole;
+  });
 
-  if (error) {
-    return (
-      <div className="w-full max-w-[1400px] mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="text-center py-12">
-          <p className="text-red-600">Error: {error}</p>
-          <button 
-            onClick={loadUsers}
-            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
-          >
-            Reintentar
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const sorted = [...filtered].sort((a, b) => {
+    const va = normalize(a[sortCol] ?? "");
+    const vb = normalize(b[sortCol] ?? "");
+    return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
 
-  // Renderizar tabla de usuarios
+  const clearFilters = () => { setSearch(""); setFilterRole(""); };
+  const hasFilters = search || filterRole;
+
+  if (loading) return (
+    <div className="max-w-7xl mx-auto py-10 px-4 text-center">
+      <p className="text-gray-600">Cargando usuarios...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="max-w-7xl mx-auto py-10 px-4 text-center">
+      <p className="text-red-600">Error: {error}</p>
+      <button onClick={loadUsers} className="mt-4 px-4 py-2 bg-primary text-white rounded">Reintentar</button>
+    </div>
+  );
+
   return (
-    <div className="w-full max-w-[1400px] mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <button 
-            onClick={() => navigate('/admin')}
-            className="text-primary hover:underline mb-2 text-sm"
-          >
-            ← Volver al Dashboard
-          </button>
-          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">👥 Gestión de Usuarios</h1>
-        </div>
-        <button
-          onClick={() => navigate('/admin/usuarios/nuevo')}
-          className="w-full sm:w-auto text-center px-6 py-2.5 bg-primary text-white font-semibold rounded shadow-sm hover:bg-primary-dark transition-all"
-        >
-          ➕ Nuevo Usuario
+    <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+      {/* Encabezado */}
+      <div className="mb-6">
+        <button onClick={() => navigate("/admin")} className="text-primary hover:underline text-sm mb-2">
+          ← Volver al Dashboard
         </button>
-      </header>
-
-      {/* --- VISTA MÓVIL (Cards) --- */}
-      <div className="grid grid-cols-1 gap-4 md:hidden">
-        {users.map((user) => (
-          <div key={user.id} className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm space-y-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-[10px] font-black text-primary uppercase tracking-widest">ID: #{user.id}</p>
-                <h3 className="text-lg font-bold text-gray-900 leading-tight">{user.firstName} {user.lastName}</h3>
-                <p className="text-sm text-gray-500 font-medium">{user.email}</p>
-              </div>
-              <span className="px-2 py-1 text-[10px] font-bold rounded bg-gray-100 text-gray-700 uppercase">
-                {user.role}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-[11px] border-t border-gray-50 pt-3">
-              <div>
-                <p className="text-gray-400 font-bold uppercase">Teléfono</p>
-                <p className="text-gray-700">{user.phone || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 font-bold uppercase">Creado</p>
-                <p className="text-gray-700">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</p>
-              </div>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button onClick={() => navigate(`/admin/usuarios/${user.id}/editar`)} className="flex-1 text-center py-2 border border-primary text-primary rounded font-bold text-sm hover:bg-primary hover:text-white transition-colors">Editar</button>
-              <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)} className="flex-1 py-2 border border-red-600 text-red-600 rounded font-bold text-sm hover:bg-red-600 hover:text-white transition-colors">Eliminar</button>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">👥 Gestión de Usuarios</h1>
+            <p className="text-sm text-gray-500 mt-1">{sorted.length} usuario(s)</p>
           </div>
-        ))}
+          <button onClick={() => navigate("/admin/usuarios/nuevo")}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm">
+            ➕ Nuevo Usuario
+          </button>
+        </div>
       </div>
 
-      {/* --- VISTA TABLET/DESKTOP --- */}
-      <div className="hidden md:block bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <table className="w-full table-fixed divide-y divide-gray-200 text-left">
-          <thead className="bg-gray-50">
+      {/* Filtros */}
+      <div className="bg-white shadow-sm rounded-lg p-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input type="text" placeholder="Buscar nombre, email, teléfono, ID..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary col-span-2" />
+          <select value={filterRole} onChange={e => setFilterRole(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary">
+            <option value="">Todos los roles</option>
+            <option value="CLIENT">Cliente</option>
+            <option value="ADMIN">Administrador</option>
+          </select>
+        </div>
+        {hasFilters && (
+          <button onClick={clearFilters} className="mt-3 text-xs text-gray-500 hover:text-red-500 underline">
+            Limpiar filtros
+          </button>
+        )}
+      </div>
+
+      {/* Tabla */}
+      <div className="bg-white shadow rounded-lg overflow-x-auto">
+        <table className="w-full table-auto text-sm">
+          <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="w-[8%] px-4 py-4 text-[11px] font-bold text-gray-500 uppercase">ID</th>
-              <th className="w-[27%] lg:w-[20%] px-4 py-4 text-[11px] font-bold text-gray-500 uppercase">Usuario</th>
-              {/* Email: Oculto en tablet (se muestra bajo el nombre), Visible en LG (independiente) */}
-              <th className="hidden lg:table-cell w-[20%] px-4 py-4 text-[11px] font-bold text-gray-500 uppercase">Email</th>
-              <th className="w-[12%] px-4 py-4 text-[11px] font-bold text-gray-500 uppercase">Rol</th>
-              <th className="w-[28%] lg:w-[25%] px-4 py-4 text-[11px] font-bold text-gray-500 uppercase">Contacto / Registro</th>
-              <th className="w-[25%] lg:w-[15%] px-4 py-4 text-center text-[11px] font-bold text-gray-500 uppercase">Acciones</th>
+              {[
+                { col: "id",        label: "ID" },
+                { col: "lastName",  label: "Nombre" },
+                { col: "email",     label: "Email" },
+                { col: "role",      label: "Rol" },
+                { col: "phone",     label: "Teléfono" },
+                { col: "createdAt", label: "Registro" },
+              ].map(({ col, label }) => (
+                <th key={col} onClick={() => handleSort(col)}
+                  className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
+                  {label}<SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
+                </th>
+              ))}
+              <th className="px-4 py-3 text-center font-semibold text-gray-700">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-4 py-4 text-xs font-mono text-gray-400">#{user.id}</td>
-                
-                <td className="px-4 py-4">
-                  <div className="flex flex-col">
-                    <span className="text-sm lg:text-base font-bold text-gray-900 truncate">
-                      {user.firstName} {user.lastName}
-                    </span>
-                    {/* Solo aparece bajo el nombre si la pantalla es menor a 1024px */}
-                    <span className="text-[11px] text-gray-500 lg:hidden truncate">{user.email}</span>
-                  </div>
+          <tbody>
+            {sorted.map(user => (
+              <tr key={user.id} className="border-t hover:bg-gray-50 transition">
+                <td className="px-4 py-3 text-xs font-mono text-gray-500">#{user.id}</td>
+                <td className="px-4 py-3">
+                  <p className="font-medium text-gray-900">{user.firstName} {user.lastName}</p>
                 </td>
-
-                <td className="hidden lg:table-cell px-4 py-4 text-sm text-gray-600 truncate">
-                  {user.email}
-                </td>
-
-                <td className="px-4 py-4">
-                  <span className="inline-block px-2 py-0.5 text-[10px] lg:text-xs font-semibold rounded bg-gray-100 text-gray-700 uppercase">
-                    {user.role}
+                <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
+                <td className="px-4 py-3">
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    user.role === "ADMIN"
+                      ? "bg-purple-100 text-purple-700"
+                      : "bg-gray-100 text-gray-600"
+                  }`}>
+                    {user.role === "ADMIN" ? "Administrador" : "Cliente"}
                   </span>
                 </td>
-
-                <td className="px-4 py-4">
-                  <div className="flex flex-col text-[11px] lg:text-sm text-gray-600 leading-tight">
-                    <span className="font-medium">{user.phone || "Sin teléfono"}</span>
-                    <span className="text-gray-400 text-[10px] lg:text-xs">
-                      Reg: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
-                    </span>
-                  </div>
+                <td className="px-4 py-3 text-sm text-gray-600">{user.phone || "—"}</td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
                 </td>
-
-                <td className="px-4 py-4">
-                  <div className="flex flex-col lg:flex-row justify-center items-center gap-2">
-                    <button onClick={() => navigate(`/admin/usuarios/${user.id}/editar`)} className="w-full lg:w-20 py-1.5 text-center border border-primary text-primary rounded text-[11px] font-bold hover:bg-primary hover:text-white transition-all shadow-sm uppercase">Editar</button>
-                    <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)} className="w-full lg:w-20 py-1.5 text-center border border-red-600 text-red-600 rounded text-[11px] font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm uppercase">Borrar</button>
+                <td className="px-4 py-3">
+                  <div className="flex gap-1 justify-center">
+                    <button onClick={() => navigate(`/admin/usuarios/${user.id}/editar`)}
+                      className="text-xs px-3 py-1 border border-primary text-primary rounded hover:bg-primary hover:text-white transition">
+                      Editar
+                    </button>
+                    <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)}
+                      className="text-xs px-3 py-1 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition">
+                      Eliminar
+                    </button>
                   </div>
                 </td>
               </tr>
             ))}
+            {sorted.length === 0 && (
+              <tr>
+                <td colSpan="7" className="text-center py-10 text-gray-500">
+                  {hasFilters ? "No hay usuarios con los filtros aplicados." : "No hay usuarios registrados."}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-
-      {users.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300 italic text-gray-400">
-          No hay usuarios registrados.
-        </div>
-      )}
     </div>
   );
 }

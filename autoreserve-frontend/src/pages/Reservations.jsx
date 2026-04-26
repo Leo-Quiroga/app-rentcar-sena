@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyReservations, cancelReservation } from "../api/reservationsApi";
 
+const normalize = (str) =>
+  String(str ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 const STATUS_CONFIG = {
   PENDING:     { label: "Pendiente de pago", pill: "bg-orange-100 text-orange-800" },
   CONFIRMED:   { label: "Confirmada",        pill: "bg-green-100 text-green-800" },
@@ -84,11 +87,11 @@ export default function Reservations() {
 
   // Filtrar
   const filtered = reservations.filter(r => {
-    const term = search.toLowerCase();
+    const term = normalize(search);
     const matchSearch = !search ||
-      r.carBrand?.toLowerCase().includes(term) ||
-      r.carModel?.toLowerCase().includes(term) ||
-      r.pickupBranchName?.toLowerCase().includes(term) ||
+      normalize(r.carBrand).includes(term) ||
+      normalize(r.carModel).includes(term) ||
+      normalize(r.pickupBranchName).includes(term) ||
       String(r.id).includes(term);
     const matchStatus  = !filterStatus  || r.status === filterStatus;
     const matchPayment = !filterPayment || r.paymentStatus === filterPayment;

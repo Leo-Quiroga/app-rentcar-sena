@@ -36,11 +36,11 @@ export default function AdminAutoForm() {
         if (isEditing) {
           const data = await getAdminCarModelById(id);
           setFormData({
-            categoryId: data.categoryId || "",
+            categoryId: data.categoryId ? String(data.categoryId) : "",
             brand: data.brand || "",
             model: data.model || "",
             year: data.year || "",
-            branchId: "",
+            branchId: data.branchId ? String(data.branchId) : "",
             pricePerDay: data.pricePerDay || "",
             image: data.image || "",
             description: data.description || "",
@@ -156,7 +156,7 @@ export default function AdminAutoForm() {
         {/* Sede */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Sede principal *</label>
-          <select name="branchId" value={formData.branchId} onChange={handleChange} required={!isEditing}
+          <select name="branchId" value={formData.branchId} onChange={handleChange}
             className="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-primary focus:border-primary">
             <option value="">Selecciona una sede</option>
             {branches.map(b => <option key={b.id} value={b.id}>{b.name} — {b.city}</option>)}

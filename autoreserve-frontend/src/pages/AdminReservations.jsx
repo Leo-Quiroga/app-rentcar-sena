@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAdminReservations, updateReservationStatus } from "../api/adminReservationsApi";
 
+const normalize = (str) =>
+  String(str ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 const STATUS_CONFIG = {
   PENDING:     { label: "Pendiente de pago", pill: "bg-orange-100 text-orange-800" },
   CONFIRMED:   { label: "Confirmada",        pill: "bg-green-100 text-green-800" },
@@ -81,15 +84,15 @@ export default function AdminReservations() {
 
   // Filtrar
   const filtered = reservations.filter(r => {
-    const term = search.toLowerCase();
+    const term = normalize(search);
     const matchSearch = !search ||
       String(r.id).includes(term) ||
-      r.carBrand?.toLowerCase().includes(term) ||
-      r.carModel?.toLowerCase().includes(term) ||
-      r.userFirstName?.toLowerCase().includes(term) ||
-      r.userLastName?.toLowerCase().includes(term) ||
-      r.userEmail?.toLowerCase().includes(term) ||
-      r.pickupBranchName?.toLowerCase().includes(term);
+      normalize(r.carBrand).includes(term) ||
+      normalize(r.carModel).includes(term) ||
+      normalize(r.userFirstName).includes(term) ||
+      normalize(r.userLastName).includes(term) ||
+      normalize(r.userEmail).includes(term) ||
+      normalize(r.pickupBranchName).includes(term);
     const matchStatus  = !filterStatus  || r.status === filterStatus;
     const matchPayment = !filterPayment || r.paymentStatus === filterPayment;
     const matchFrom    = !filterDateFrom || r.startDate >= filterDateFrom;

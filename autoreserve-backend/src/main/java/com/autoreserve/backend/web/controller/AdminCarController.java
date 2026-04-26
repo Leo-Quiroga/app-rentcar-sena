@@ -56,24 +56,45 @@ public class AdminCarController {
     @GetMapping("/models")
     public ResponseEntity<?> getAllModels() {
         List<CarModel> models = carModelRepository.findAll();
-        List<Map<String, Object>> response = models.stream().map(m -> {
-            long available = carRepository.countAvailableByModel(m.getId());
-            long total = carRepository.countByCarModelId(m.getId());
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", m.getId());
-            map.put("brand", m.getBrand());
-            map.put("model", m.getModel());
-            map.put("year", m.getYear());
-            map.put("pricePerDay", m.getPricePerDay());
-            map.put("image", m.getImage() != null ? m.getImage() : "");
-            map.put("description", m.getDescription() != null ? m.getDescription() : "");
-            map.put("categoryName", m.getCategory().getName());
-            map.put("categoryId", m.getCategory().getId());
-            map.put("availableUnits", available);
-            map.put("totalUnits", total);
-            return map;
-        }).toList();
+        List<Map<String, Object>> response = models.stream().map(m -> buildModelMap(m)).toList();
         return ResponseEntity.ok(response);
+    }
+
+    /** Obtiene un modelo por ID con todos sus datos para edición */
+    @GetMapping("/models/{id}")
+    public ResponseEntity<?> getModelById(@PathVariable Long id) {
+        try {
+            CarModel m = carModelRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Modelo no encontrado con ID: " + id));
+            return ResponseEntity.ok(buildModelMap(m));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    private Map<String, Object> buildModelMap(CarModel m) {
+        long available = carRepository.countAvailableByModel(m.getId());
+        long total = carRepository.countByCarModelId(m.getId());
+        // Obtener branchId de la primera unidad del modelo (si existe)
+        Long branchId = carRepository.findByCarModelId(m.getId()).stream()
+                .findFirst().map(c -> c.getBranch().getId()).orElse(null);
+        String branchName = carRepository.findByCarModelId(m.getId()).stream()
+                .findFirst().map(c -> c.getBranch().getName()).orElse("");
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", m.getId());
+        map.put("brand", m.getBrand());
+        map.put("model", m.getModel());
+        map.put("year", m.getYear());
+        map.put("pricePerDay", m.getPricePerDay());
+        map.put("image", m.getImage() != null ? m.getImage() : "");
+        map.put("description", m.getDescription() != null ? m.getDescription() : "");
+        map.put("categoryName", m.getCategory().getName());
+        map.put("categoryId", m.getCategory().getId());
+        map.put("branchId", branchId);
+        map.put("branchName", branchName);
+        map.put("availableUnits", available);
+        map.put("totalUnits", total);
+        return map;
     }
 
     /** Crea un modelo y genera N unidades en PENDING_REGISTRATION */
