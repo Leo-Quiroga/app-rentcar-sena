@@ -102,9 +102,9 @@ public class AdminCarController {
     public ResponseEntity<?> createModel(@Valid @RequestBody CarModelRequest request) {
         try {
             Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+                    .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + request.getCategoryId()));
             Branch branch = branchRepository.findById(request.getBranchId())
-                    .orElseThrow(() -> new RuntimeException("Sede no encontrada"));
+                    .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + request.getBranchId()));
 
             CarModel carModel = new CarModel();
             carModel.setBrand(request.getBrand());
@@ -113,26 +113,47 @@ public class AdminCarController {
             carModel.setPricePerDay(request.getPricePerDay());
             carModel.setImage(request.getImage());
             carModel.setDescription(request.getDescription());
-            carModel.setCategory(category);
+            carModel.setCategory(category); // Asegurar que la categoría se asigne
+            
             CarModel saved = carModelRepository.save(carModel);
+            
+            // Verificar que el modelo guardado tenga categoría
+            if (saved.getCategory() == null) {
+                throw new RuntimeException("Error: El modelo se guardó sin categoría");
+            }
 
             // Crear N unidades en PENDING_REGISTRATION
+            int unitsCreated = 0;
             for (int i = 0; i < request.getQuantity(); i++) {
-                Car unit = new Car();
-                unit.setCarModel(saved);
-                unit.setBranch(branch);
-                unit.setStatus(CarStatus.PENDING_REGISTRATION);
-                carRepository.save(unit);
+                try {
+                    Car unit = new Car();
+                    unit.setCarModel(saved);
+                    unit.setBranch(branch);
+                    unit.setStatus(CarStatus.PENDING_REGISTRATION);
+                    carRepository.save(unit);
+                    unitsCreated++;
+                } catch (Exception e) {
+                    System.err.println("Error creando unidad " + (i+1) + ": " + e.getMessage());
+                    // Continuar con las demás unidades
+                }
             }
 
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "Modelo creado con " + request.getQuantity() + " unidad(es) pendiente(s) de identificación",
+                "message", "Modelo creado con " + unitsCreated + " unidad(es) pendiente(s) de identificación",
                 "modelId", saved.getId(),
-                "unitsCreated", request.getQuantity()
+                "unitsCreated", unitsCreated,
+                "categoryId", saved.getCategory().getId(),
+                "categoryName", saved.getCategory().getName()
             ));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false, 
+                "error", "Error interno del servidor", 
+                "details", e.getMessage()
+            ));
         }
     }
 
@@ -182,21 +203,41 @@ public class AdminCarController {
         try {
             CarModel model = carModelRepository.findById(modelId)
                     .orElseThrow(() -> new RuntimeException("Modelo no encontrado"));
+            
+            // Verificar que el modelo tenga categoría asignada
+            if (model.getCategory() == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false, 
+                    "error", "El modelo no tiene categoría asignada. No se pueden crear unidades sin categoría."
+                ));
+            }
+            
             Long branchId = Long.parseLong(body.get("branchId").toString());
             Branch branch = branchRepository.findById(branchId)
                     .orElseThrow(() -> new RuntimeException("Sede no encontrada"));
+            
             Car unit = new Car();
             unit.setCarModel(model);
             unit.setBranch(branch);
             unit.setStatus(CarStatus.PENDING_REGISTRATION);
+            
             Car saved = carRepository.save(unit);
+            
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Unidad agregada exitosamente",
                 "unitId", saved.getId()
             ));
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "ID de sede inválido"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false, 
+                "error", "Error interno del servidor", 
+                "details", e.getMessage()
+            ));
         }
     }
 

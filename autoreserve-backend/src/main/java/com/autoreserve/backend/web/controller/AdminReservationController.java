@@ -178,22 +178,24 @@ public class AdminReservationController {
                     ));
                 }
 
-                // 4. Asignar la primera unidad disponible y marcarla como RENTED
+                // 4. Asignar la primera unidad disponible - NO marcar como RENTED hasta fecha de inicio
                 Car assignedCar = availableUnits.get(0);
-                assignedCar.setStatus(CarStatus.RENTED);
-                carRepository.save(assignedCar);
+                // El auto permanece AVAILABLE hasta que inicie la reserva
                 reservation.setCar(assignedCar);
                 
                 System.out.println("✅ Admin confirmó reserva " + id + ": Auto " + assignedCar.getPlate() + 
-                                 " (ID: " + assignedCar.getId() + ") asignado y marcado como RENTED");
+                                 " (ID: " + assignedCar.getId() + ") asignado, permanece AVAILABLE hasta fecha de inicio");
             }
 
-            // Si cancela una reserva CONFIRMED, liberar el auto
+            // Si cancela una reserva CONFIRMED, liberar el auto y procesar reembolso
             if (newStatus == ReservationStatus.CANCELLED && reservation.getCar() != null
                     && reservation.getStatus() == ReservationStatus.CONFIRMED) {
                 reservation.getCar().setStatus(CarStatus.AVAILABLE);
                 carRepository.save(reservation.getCar());
-                reservation.setPaymentStatus(PaymentStatus.REFUND_PENDING);
+                // Si tenía pago confirmado, procesar reembolso
+                if (reservation.getPaymentStatus() == PaymentStatus.PAID) {
+                    reservation.setPaymentStatus(PaymentStatus.REFUND_PENDING);
+                }
                 System.out.println("🔓 Auto " + reservation.getCar().getPlate() + " liberado por cancelación de reserva " + id);
             }
 
@@ -237,6 +239,60 @@ public class AdminReservationController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Estado de pago inválido: " + paymentStatus));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    /** Admin cancela reserva - NUEVO MÉTODO para consistencia de estados */
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelReservation(@PathVariable Long id) {
+        try {
+            Reservation reservation = reservationRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Reserva no encontrada con ID: " + id));
+
+            if (reservation.getStatus() == ReservationStatus.IN_PROGRESS) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "error", "No se puede cancelar una reserva que está en curso"));
+            }
+            if (reservation.getStatus() == ReservationStatus.COMPLETED) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "error", "No se puede cancelar una reserva completada"));
+            }
+            if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "error", "Esta reserva ya está cancelada"));
+            }
+
+            // Si la reserva estaba confirmada y tenía pago, procesar reembolso
+            if (reservation.getStatus() == ReservationStatus.CONFIRMED && 
+                reservation.getPaymentStatus() == PaymentStatus.PAID) {
+                reservation.setPaymentStatus(PaymentStatus.REFUND_PENDING);
+            }
+
+            // Si tenía auto asignado, liberarlo (aunque debería estar AVAILABLE)
+            if (reservation.getCar() != null) {
+                reservation.getCar().setStatus(CarStatus.AVAILABLE);
+                carRepository.save(reservation.getCar());
+                System.out.println("🔓 Auto " + reservation.getCar().getPlate() + " liberado por cancelación admin de reserva " + id);
+            }
+
+            reservation.setStatus(ReservationStatus.CANCELLED);
+            reservationRepository.save(reservation);
+
+            String message = reservation.getPaymentStatus() == PaymentStatus.REFUND_PENDING
+                    ? "Reserva cancelada por admin. Reembolso en proceso."
+                    : "Reserva cancelada por admin exitosamente.";
+
+            return ResponseEntity.ok(Map.of(
+                "success", true, 
+                "message", message, 
+                "reservationId", id,
+                "paymentStatus", reservation.getPaymentStatus().name()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", e.getMessage()));
         }
     }
 

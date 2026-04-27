@@ -34,11 +34,13 @@ public interface CarRepository extends JpaRepository<Car, Long> {
     long countByCarModelId(Long carModelId);
 
     // Buscar primera unidad disponible de un modelo para asignar a reserva
+    // Considera fechas de reserva, no estado del auto (que solo cambia durante uso activo)
     @Query("SELECT c FROM Car c WHERE c.carModel.id = :modelId " +
-           "AND c.status = 'AVAILABLE' " +
+           "AND c.status IN ('AVAILABLE', 'RENTED') " +
            "AND c.id NOT IN (" +
            "  SELECT r.car.id FROM Reservation r " +
-           "  WHERE (r.status = 'CONFIRMED' OR r.status = 'IN_PROGRESS') " +
+           "  WHERE r.car.id IS NOT NULL " +
+           "  AND (r.status = 'CONFIRMED' OR r.status = 'IN_PROGRESS') " +
            "  AND (:startDate <= r.endDate) AND (:endDate >= r.startDate)" +
            ") ORDER BY c.id ASC")
     List<Car> findAvailableUnitForModel(

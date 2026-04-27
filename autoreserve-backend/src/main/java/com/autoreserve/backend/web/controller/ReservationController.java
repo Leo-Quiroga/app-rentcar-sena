@@ -174,8 +174,9 @@ public class ReservationController {
     }
 
     /**
-     * Confirma el pago: busca una unidad disponible, la asigna, la marca como RENTED
+     * Confirma el pago: busca una unidad disponible, la asigna
      * y cambia la reserva a CONFIRMED.
+     * El auto permanece AVAILABLE hasta la fecha de inicio.
      */
     @PutMapping("/{id}/confirm-payment")
     public ResponseEntity<?> confirmPayment(@PathVariable Long id,
@@ -207,11 +208,10 @@ public class ReservationController {
                 ));
             }
 
-            // Asignar la primera unidad disponible y marcarla como RENTED
+            // Asignar la primera unidad disponible - NO cambiar estado hasta fecha de inicio
             Car assignedCar = availableUnits.get(0);
-            assignedCar.setStatus(CarStatus.RENTED);
-            carRepository.save(assignedCar);
-
+            // El auto permanece AVAILABLE hasta que inicie la reserva
+            
             reservation.setCar(assignedCar);
             reservation.setStatus(ReservationStatus.CONFIRMED);
             reservation.setPaymentStatus(PaymentStatus.PAID);
@@ -219,7 +219,7 @@ public class ReservationController {
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "Pago confirmado exitosamente. Tu reserva está confirmada.",
+                    "message", "Pago confirmado exitosamente. Tu reserva está confirmada. El auto se asignará el día de inicio.",
                     "data", toResponse(reservation)
             ));
         } catch (RuntimeException e) {
@@ -271,10 +271,11 @@ public class ReservationController {
                             "error", "Solo puedes cancelar una reserva confirmada con al menos 7 días de anticipación. Tu reserva inicia el " + reservation.getStartDate()
                     ));
                 }
-                // Liberar el auto asignado
+                // Liberar el auto asignado (debería estar AVAILABLE, pero asegurar)
                 if (reservation.getCar() != null) {
                     reservation.getCar().setStatus(CarStatus.AVAILABLE);
                     carRepository.save(reservation.getCar());
+                    System.out.println("🔓 Auto " + reservation.getCar().getPlate() + " liberado por cancelación de reserva " + id);
                 }
                 reservation.setPaymentStatus(PaymentStatus.REFUND_PENDING);
             }

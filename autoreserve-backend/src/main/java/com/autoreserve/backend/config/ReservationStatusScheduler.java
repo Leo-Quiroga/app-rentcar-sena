@@ -26,11 +26,14 @@ public class ReservationStatusScheduler {
         LocalDate today = LocalDate.now();
         LocalDateTime cutoff = LocalDateTime.now().minusHours(24);
 
+        System.out.println("=== SCHEDULER: Actualizando estados de reservas para " + today + " ===");
+
         // 1. Cancelar reservas PENDING con más de 24h sin pagar
         List<Reservation> expiredPending = reservationRepository.findExpiredPendingReservations(cutoff);
         for (Reservation r : expiredPending) {
             r.setStatus(ReservationStatus.CANCELLED);
             // No hay auto asignado en PENDING, no hay nada que liberar
+            System.out.println("❌ Reserva " + r.getId() + " cancelada por expiración (24h sin pago)");
         }
         if (!expiredPending.isEmpty()) reservationRepository.saveAll(expiredPending);
 
@@ -38,14 +41,20 @@ public class ReservationStatusScheduler {
         List<Reservation> pendingAtStart = reservationRepository.findPendingWithoutCarReachedStartDate(today);
         for (Reservation r : pendingAtStart) {
             r.setStatus(ReservationStatus.CANCELLED);
+            System.out.println("❌ Reserva " + r.getId() + " cancelada por llegar a fecha de inicio sin pago");
         }
         if (!pendingAtStart.isEmpty()) reservationRepository.saveAll(pendingAtStart);
 
-        // 3. Pasar a IN_PROGRESS las reservas CONFIRMED cuyo startDate llegó
+        // 3. NUEVO: Pasar a IN_PROGRESS las reservas CONFIRMED cuyo startDate llegó Y marcar auto como RENTED
         List<Reservation> startingToday = reservationRepository.findConfirmedStartingToday(today);
         for (Reservation r : startingToday) {
             r.setStatus(ReservationStatus.IN_PROGRESS);
-            // El auto ya está RENTED desde que se confirmó el pago
+            // AHORA SÍ marcar el auto como RENTED (durante uso activo)
+            if (r.getCar() != null) {
+                r.getCar().setStatus(CarStatus.RENTED);
+                carRepository.save(r.getCar());
+                System.out.println("🚗 Reserva " + r.getId() + " iniciada: Auto " + r.getCar().getPlate() + " marcado como RENTED");
+            }
         }
         if (!startingToday.isEmpty()) reservationRepository.saveAll(startingToday);
 
@@ -56,8 +65,13 @@ public class ReservationStatusScheduler {
             if (r.getCar() != null) {
                 r.getCar().setStatus(CarStatus.AVAILABLE);
                 carRepository.save(r.getCar());
+                System.out.println("✅ Reserva " + r.getId() + " completada: Auto " + r.getCar().getPlate() + " liberado");
             }
         }
         if (!ended.isEmpty()) reservationRepository.saveAll(ended);
+
+        System.out.println("=== SCHEDULER: Procesadas " + 
+                          (expiredPending.size() + pendingAtStart.size() + startingToday.size() + ended.size()) + 
+                          " reservas ===");
     }
 }
