@@ -27,7 +27,7 @@ export async function apiFetch(endpoint, options = {}) {
       // Mantener compatibilidad con formato anterior
       switch (response.status) {
         case 400:
-          errorMessage = errorData.message || "Datos inválidos";
+          errorMessage = errorData.error || errorData.message || "Datos inválidos";
           break;
         case 401:
           errorMessage = "Credenciales incorrectas";
@@ -36,13 +36,13 @@ export async function apiFetch(endpoint, options = {}) {
           errorMessage = "Recurso no encontrado";
           break;
         case 422:
-          errorMessage = errorData.message || "Formato de datos inválido";
+          errorMessage = errorData.error || errorData.message || "Formato de datos inválido";
           break;
         case 500:
           errorMessage = "Error interno del servidor";
           break;
         default:
-          errorMessage = errorData.message || "Error en la petición";
+          errorMessage = errorData.error || errorData.message || "Error en la petición";
       }
     }
     

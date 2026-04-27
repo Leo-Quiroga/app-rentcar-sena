@@ -1,14 +1,16 @@
-// Componente Header con menú de navegación, autenticación y badge de mensajes
+// Componente Header con menú de navegación, autenticación y badges de mensajes y favoritos
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { getUnreadCount } from "../api/contactApi";
+import { useFavorites } from "../utils/useFavorites";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuth();
+  const { count: favoritesCount } = useFavorites();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -57,6 +59,27 @@ export default function Header() {
           <Link to="/" className="hover:text-secondary transition">Inicio</Link>
           <Link to="/categorias" className="hover:text-secondary transition">Categorías</Link>
           <Link to="/sedes" className="hover:text-secondary transition">Sedes</Link>
+          {user && (
+            <>
+              <Link to="/favoritos" className="hover:text-secondary transition flex items-center gap-1">
+                Favoritos
+                {favoritesCount > 0 && (
+                  <span className="bg-yellow-500 text-yellow-900 text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                    {favoritesCount}
+                  </span>
+                )}
+              </Link>
+              {user.role === "ADMIN" ? (
+                <Link to="/admin/reservas" className="hover:text-secondary transition">
+                  Reservas
+                </Link>
+              ) : (
+                <Link to="/reservas" className="hover:text-secondary transition">
+                  Mis Reservas
+                </Link>
+              )}
+            </>
+          )}
         </nav>
 
         {/* Acciones desktop */}
@@ -108,6 +131,16 @@ export default function Header() {
                       onClick={() => setIsProfileOpen(false)}>
                       Mi Perfil
                     </Link>
+                    <Link to="/favoritos"
+                      className="flex items-center justify-between px-4 py-2 text-sm hover:bg-gray-100"
+                      onClick={() => setIsProfileOpen(false)}>
+                      <span>Mis Favoritos</span>
+                      {favoritesCount > 0 && (
+                        <span className="bg-yellow-500 text-yellow-900 text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                          {favoritesCount > 99 ? "99+" : favoritesCount}
+                        </span>
+                      )}
+                    </Link>
                     <Link to={messagesPath}
                       className="flex items-center justify-between px-4 py-2 text-sm hover:bg-gray-100"
                       onClick={() => setIsProfileOpen(false)}>
@@ -141,6 +174,28 @@ export default function Header() {
       <div className={`md:hidden ${isOpen ? "block" : "hidden"} bg-primary-dark px-4 py-3`}>
         <Link to="/" className="block py-2 hover:text-secondary transition" onClick={() => setIsOpen(false)}>Inicio</Link>
         <Link to="/categorias" className="block py-2 hover:text-secondary transition" onClick={() => setIsOpen(false)}>Categorías</Link>
+        
+        {user && (
+          <>
+            <Link to="/favoritos" className="flex items-center gap-2 py-2 hover:text-secondary transition" onClick={() => setIsOpen(false)}>
+              <span>Favoritos</span>
+              {favoritesCount > 0 && (
+                <span className="bg-yellow-500 text-yellow-900 text-xs font-bold rounded-full px-1.5 py-0.5">
+                  {favoritesCount}
+                </span>
+              )}
+            </Link>
+            {user.role === "ADMIN" ? (
+              <Link to="/admin/reservas" className="block py-2 hover:text-secondary transition" onClick={() => setIsOpen(false)}>
+                Reservas
+              </Link>
+            ) : (
+              <Link to="/reservas" className="block py-2 hover:text-secondary transition" onClick={() => setIsOpen(false)}>
+                Mis Reservas
+              </Link>
+            )}
+          </>
+        )}
 
         {!user ? (
           <>

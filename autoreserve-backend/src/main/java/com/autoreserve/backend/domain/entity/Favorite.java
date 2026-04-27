@@ -4,15 +4,15 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Entidad que gestiona la relación de vehículos favoritos por parte de los usuarios.
+ * Entidad que gestiona la relación de modelos de vehículos favoritos por parte de los usuarios.
  * Mapea la tabla "favorite" y garantiza, mediante restricciones de unicidad,
- * que un usuario no duplique un mismo vehículo en su lista de favoritos.
+ * que un usuario no duplique un mismo modelo en su lista de favoritos.
  */
 @Entity
 @Table(
         name = "favorite",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"user_id", "car_id"})
+                @UniqueConstraint(columnNames = {"user_id", "car_model_id"})
         }
 )
 public class Favorite {
@@ -25,7 +25,7 @@ public class Favorite {
     private Long id;
 
     /**
-     * Referencia al usuario que marca el vehículo como favorito.
+     * Referencia al usuario que marca el modelo como favorito.
      * Campo obligatorio vinculado a la entidad User.
      */
     @ManyToOne(optional = false)
@@ -33,12 +33,12 @@ public class Favorite {
     private User user;
 
     /**
-     * Referencia al vehículo marcado como favorito.
-     * Campo obligatorio vinculado a la entidad Car.
+     * Referencia al modelo de vehículo marcado como favorito.
+     * Campo obligatorio vinculado a la entidad CarModel.
      */
     @ManyToOne(optional = false)
-    @JoinColumn(name = "car_id")
-    private Car car;
+    @JoinColumn(name = "car_model_id")
+    private CarModel carModel;
 
     /**
      * Fecha y hora exacta en la que se creó el registro de favorito.
@@ -50,12 +50,17 @@ public class Favorite {
      * Constructor por defecto para la persistencia de JPA.
      */
     public Favorite() {
+        this.createdAt = LocalDateTime.now();
     }
 
     /* ================= GETTERS & SETTERS ================= */
 
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public User getUser() {
@@ -66,12 +71,12 @@ public class Favorite {
         this.user = user;
     }
 
-    public Car getCar() {
-        return car;
+    public CarModel getCarModel() {
+        return carModel;
     }
 
-    public void setCar(Car car) {
-        this.car = car;
+    public void setCarModel(CarModel carModel) {
+        this.carModel = carModel;
     }
 
     public LocalDateTime getCreatedAt() {

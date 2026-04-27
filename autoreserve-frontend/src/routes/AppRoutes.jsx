@@ -2,6 +2,7 @@
 // Define todas las rutas principales, de usuario y de administración
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
+import { FavoritesProvider } from "../contexts/FavoritesContext.jsx";
 
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
@@ -57,7 +58,8 @@ import Error404 from "../pages/Error404";
 
 export default function AppRoutes() {
   return (
-    <Routes>
+    <FavoritesProvider>
+      <Routes>
       {/* ========= Rutas principales ========= */}
       <Route
         path="/"
@@ -425,6 +427,7 @@ export default function AppRoutes() {
           </MainLayout>
         }
       />
-    </Routes>
+      </Routes>
+    </FavoritesProvider>
   );
 }
