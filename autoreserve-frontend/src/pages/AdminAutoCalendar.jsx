@@ -1,24 +1,56 @@
 // Pantalla de calendario para que el administrador gestione la disponibilidad de un auto
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { mockAdminAutos } from "../data/mockAdminAutos";
+import { getAdminCarModelById } from "../api/adminCarsApi";
 
 export default function AdminAutoCalendar() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [auto, setAuto] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Buscar auto por ID
-  const auto = mockAdminAutos.find((a) => a.id === id);
   // Estado para las fechas no disponibles (mock temporal)
   const [unavailableDates, setUnavailableDates] = useState([
     "2025-09-20",
     "2025-09-25",
-  ]); 
- // Si no se encuentra el auto, mostrar mensaje de error
-  if (!auto) {
+  ]);
+
+  // Cargar datos del auto
+  useEffect(() => {
+    const loadAuto = async () => {
+      try {
+        setLoading(true);
+        const autoData = await getAdminCarModelById(id);
+        setAuto(autoData);
+        setError(null);
+      } catch (err) {
+        console.error('Error cargando auto:', err);
+        setError(err.message || 'Error al cargar el auto');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      loadAuto();
+    }
+  }, [id]);
+
+  // Estados de carga y error
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600">Cargando auto...</p>
+      </div>
+    );
+  }
+
+  if (error || !auto) {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold">Auto no encontrado</h2>
+        <p className="mt-4 text-gray-600">{error || 'El auto que buscas no existe.'}</p>
         <button
           onClick={() => navigate("/admin/autos")}
           className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
@@ -52,7 +84,7 @@ export default function AdminAutoCalendar() {
   return (
     <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-6 mt-10">
       <h1 className="text-2xl font-bold mb-6 text-neutral-dark">
-        📅 Disponibilidad de {auto.brand} {auto.model}
+        📅 Disponibilidad de {auto.name || `${auto.brand} ${auto.model}`}
       </h1>
 
       <div className="grid grid-cols-7 gap-2 text-center">

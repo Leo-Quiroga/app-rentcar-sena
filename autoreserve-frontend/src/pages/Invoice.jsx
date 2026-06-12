@@ -1,17 +1,50 @@
 // Página de factura para una reserva específica
 import { useParams, Link } from "react-router-dom";
-import { mockReservations } from "../data/mockReservations";
+import { useState, useEffect } from "react";
+import { getReservationById } from "../api/reservationsApi";
 
 export default function Invoice() {
   const { id } = useParams();
-  const reserva = mockReservations.find((r) => String(r.id) === String(id));
-  // Si no se encuentra la reserva, mostrar mensaje de error
-  if (!reserva) {
+  const [reserva, setReserva] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Cargar datos de la reserva
+  useEffect(() => {
+    const loadReservation = async () => {
+      try {
+        setLoading(true);
+        const reservationData = await getReservationById(id);
+        setReserva(reservationData);
+        setError(null);
+      } catch (err) {
+        console.error('Error cargando reserva:', err);
+        setError(err.message || 'Error al cargar la reserva');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      loadReservation();
+    }
+  }, [id]);
+
+  // Estados de carga y error
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center">
+        <p className="text-gray-600">Cargando factura...</p>
+      </div>
+    );
+  }
+
+  if (error || !reserva) {
     return (
       <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center">
         <h1 className="text-2xl font-bold mb-4">Factura no encontrada</h1>
         <p className="text-gray-600 mb-6">
-          No existe una factura para la reserva solicitada.
+          {error || 'No existe una factura para la reserva solicitada.'}
         </p>
         <Link
           to="/reservas"
@@ -38,23 +71,23 @@ export default function Invoice() {
       <section className="space-y-3 mb-6">
         <h2 className="text-lg font-semibold">Detalle de la Reserva</h2>
         <p>
-          <strong>Auto:</strong> {reserva.car.name}
+          <strong>Auto:</strong> {reserva.car?.name || reserva.carModel?.name || 'N/A'}
         </p>
         <p>
-          <strong>Categoría:</strong> {reserva.car.category}
+          <strong>Categoría:</strong> {reserva.car?.category || reserva.category?.name || 'N/A'}
         </p>
         <p>
-          <strong>Ciudad de Retiro:</strong> {reserva.filters.pickupCity}
+          <strong>Sede de Retiro:</strong> {reserva.pickupBranch?.name || reserva.filters?.pickupCity || 'N/A'}
         </p>
         <p>
-          <strong>Ciudad de Entrega:</strong> {reserva.filters.dropoffCity}
+          <strong>Sede de Entrega:</strong> {reserva.dropoffBranch?.name || reserva.filters?.dropoffCity || 'N/A'}
         </p>
         <p>
-          <strong>Fechas:</strong> {reserva.filters.startDate} →{" "}
-          {reserva.filters.endDate}
+          <strong>Fechas:</strong> {reserva.startDate || reserva.filters?.startDate} →{" "}
+          {reserva.endDate || reserva.filters?.endDate}
         </p>
         <p>
-          <strong>Días:</strong> {reserva.dias}
+          <strong>Días:</strong> {reserva.totalDays || reserva.dias || 'N/A'}
         </p>
       </section>
 
@@ -63,15 +96,15 @@ export default function Invoice() {
         <h2 className="text-lg font-semibold mb-4">Resumen de Pago</h2>
         <div className="flex justify-between text-sm mb-2">
           <span>Precio por día</span>
-          <span>${reserva.car.pricePerDay}</span>
+          <span>${reserva.pricePerDay || reserva.car?.pricePerDay || 'N/A'}</span>
         </div>
         <div className="flex justify-between text-sm mb-2">
           <span>Días reservados</span>
-          <span>{reserva.dias}</span>
+          <span>{reserva.totalDays || reserva.dias || 'N/A'}</span>
         </div>
         <div className="flex justify-between text-base font-bold border-t pt-2">
           <span>Total Pagado</span>
-          <span>${reserva.total}</span>
+          <span>${reserva.totalAmount || reserva.total || 'N/A'}</span>
         </div>
       </section>
 

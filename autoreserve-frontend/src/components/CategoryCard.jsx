@@ -28,17 +28,20 @@ export default function CategoryCard({ category, onSelect }) {
 
         {/* Botones */}
         <div className="mt-4 flex flex-col sm:flex-row gap-2 w-full justify-center">
-          <button
-            onClick={() => onSelect && onSelect(category)}
-            className="flex-1 px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-blue-700 transition"
-            aria-label={`Seleccionar categoría ${category.name}`}
-          >
-            Seleccionar
-          </button>
+          {/* Botón Seleccionar - solo si se pasa onSelect */}
+          {onSelect && (
+            <button
+              onClick={() => onSelect(category)}
+              className="flex-1 px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-blue-700 transition"
+              aria-label={`Seleccionar categoría ${category.name}`}
+            >
+              Seleccionar
+            </button>
+          )}
 
           <Link
             to={`/categorias/${category.id}`}
-            className="flex-1 px-3 py-2 text-sm text-gray-800 border border-yellow-400 rounded-md hover:bg-yellow-400 hover:text-gray-900 transition text-center"
+            className={`${onSelect ? 'flex-1' : 'w-full'} px-3 py-2 text-sm text-gray-800 border border-yellow-400 rounded-md hover:bg-yellow-400 hover:text-gray-900 transition text-center`}
           >
             Ver más
           </Link>

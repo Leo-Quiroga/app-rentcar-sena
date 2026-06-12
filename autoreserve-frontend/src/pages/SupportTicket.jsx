@@ -1,10 +1,25 @@
 // Página de tickets de soporte
 import { useState } from "react";
-import { mockTickets } from "../data/mockTickets";
+
+// Mock inicial local para tickets
+const initialTickets = [
+  {
+    id: "TCK-001",
+    subject: "Problema con la reserva",
+    status: "Abierto",
+    createdAt: "2024-01-15"
+  },
+  {
+    id: "TCK-002",
+    subject: "Consulta sobre facturación",
+    status: "Cerrado",
+    createdAt: "2024-01-10"
+  }
+];
 
 export default function SupportTicket() {
   // Estado para tickets y formulario
-  const [tickets, setTickets] = useState(mockTickets);
+  const [tickets, setTickets] = useState(initialTickets);
   const [form, setForm] = useState({ subject: "", message: "" });
   // Manejo de cambios en el formulario
   const handleChange = (e) => {
