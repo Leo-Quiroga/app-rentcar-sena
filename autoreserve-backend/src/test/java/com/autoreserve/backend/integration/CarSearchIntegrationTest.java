@@ -25,6 +25,8 @@ class CarSearchIntegrationTest {
         mockMvc.perform(get("/api/search/cars")
                 .param("startDate", "2024-12-01")
                 .param("endDate", "2024-12-05"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$").isArray());
     }
 }

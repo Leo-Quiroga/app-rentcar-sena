@@ -2,6 +2,8 @@ package com.autoreserve.backend.web.controller;
 
 import com.autoreserve.backend.domain.entity.*;
 import com.autoreserve.backend.domain.repository.CarRepository;
+import com.autoreserve.backend.domain.repository.CarModelRepository;
+import com.autoreserve.backend.util.TestImageUrls;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +32,10 @@ class SearchControllerTest {
     @MockBean
     private CarRepository carRepository;
 
-    private Car testCar;
+    @MockBean
+    private CarModelRepository carModelRepository;
+
+    private CarModel testCarModel;
 
     @BeforeEach
     void setUp() {
@@ -38,26 +43,24 @@ class SearchControllerTest {
         category.setId(1L);
         category.setName("SUV");
 
-        Branch branch = new Branch();
-        branch.setId(1L);
-        branch.setName("Sede Central");
-
-        testCar = new Car();
-        testCar.setId(1L);
-        testCar.setBrand("Toyota");
-        testCar.setModel("RAV4");
-        testCar.setYear(2023);
-        testCar.setPlate("ABC123");
-        testCar.setPricePerDay(new BigDecimal("50.00"));
-        testCar.setStatus(CarStatus.AVAILABLE);
-        testCar.setCategory(category);
-        testCar.setBranch(branch);
+        testCarModel = new CarModel();
+        testCarModel.setId(1L);
+        testCarModel.setBrand("Toyota");
+        testCarModel.setModel("RAV4");
+        testCarModel.setYear(2023);
+        testCarModel.setPricePerDay(new BigDecimal("50.00"));
+        testCarModel.setCategory(category);
+        testCarModel.setDescription("Spacious and reliable SUV perfect for family trips and city driving");
+        testCarModel.setImage(TestImageUrls.getImageUrl("Toyota", "RAV4"));
     }
 
     @Test
-    void searchAvailableCars_WithDates_ReturnsAvailableCars() throws Exception {
-        when(carRepository.findAvailableCars(any(LocalDate.class), any(LocalDate.class), eq(null)))
-                .thenReturn(List.of(testCar));
+    void searchAvailableModels_WithDates_ReturnsAvailableModels() throws Exception {
+        when(carModelRepository.findAvailableModels(any(LocalDate.class), any(LocalDate.class), eq(null)))
+                .thenReturn(List.of(testCarModel));
+        when(carRepository.findAvailableUnitForModel(eq(1L), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of());
+        when(carRepository.countByCarModelId(1L)).thenReturn(5L);
 
         mockMvc.perform(get("/api/search/cars")
                 .param("startDate", "2024-01-01")
@@ -67,9 +70,12 @@ class SearchControllerTest {
     }
 
     @Test
-    void searchAvailableCars_WithCategoryFilter_ReturnsFilteredCars() throws Exception {
-        when(carRepository.findAvailableCars(any(LocalDate.class), any(LocalDate.class), eq(1L)))
-                .thenReturn(List.of(testCar));
+    void searchAvailableModels_WithCategoryFilter_ReturnsFilteredModels() throws Exception {
+        when(carModelRepository.findAvailableModels(any(LocalDate.class), any(LocalDate.class), eq(1L)))
+                .thenReturn(List.of(testCarModel));
+        when(carRepository.findAvailableUnitForModel(eq(1L), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of());
+        when(carRepository.countByCarModelId(1L)).thenReturn(5L);
 
         mockMvc.perform(get("/api/search/cars")
                 .param("startDate", "2024-01-01")
@@ -77,5 +83,14 @@ class SearchControllerTest {
                 .param("categoryId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].categoryName").value("SUV"));
+    }
+
+    @Test
+    void searchAvailableModels_InvalidDateRange_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/search/cars")
+                .param("startDate", "2024-01-05")
+                .param("endDate", "2024-01-01"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
     }
 }

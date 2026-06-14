@@ -1,6 +1,7 @@
 package com.autoreserve.backend.domain.repository;
 
 import com.autoreserve.backend.domain.entity.*;
+import com.autoreserve.backend.util.TestImageUrls;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,7 @@ class ReservationRepositoryTest {
 
         Category category = new Category();
         category.setName("SUV");
+        category.setDescription("Sport Utility Vehicle");
         entityManager.persist(category);
 
         Branch branch = new Branch();
@@ -52,19 +54,29 @@ class ReservationRepositoryTest {
         branch.setPhone("987654321");
         entityManager.persist(branch);
 
+        // Crear CarModel primero
+        CarModel carModel = new CarModel();
+        carModel.setBrand("Toyota");
+        carModel.setModel("RAV4");
+        carModel.setYear(2023);
+        carModel.setPricePerDay(new BigDecimal("50.00"));
+        carModel.setCategory(category);
+        carModel.setDescription("Spacious and reliable SUV perfect for family trips and city driving");
+        carModel.setImage(TestImageUrls.getImageUrl("Toyota", "RAV4"));
+        entityManager.persist(carModel);
+
+        // Crear Car asociado al CarModel
         Car car = new Car();
-        car.setBrand("Toyota");
-        car.setModel("RAV4");
-        car.setYear(2023);
+        car.setCarModel(carModel);
         car.setPlate("ABC123");
-        car.setPricePerDay(new BigDecimal("50.00"));
+        car.setColor("Rojo");
         car.setStatus(CarStatus.AVAILABLE);
-        car.setCategory(category);
         car.setBranch(branch);
         entityManager.persist(car);
 
         Reservation r1 = new Reservation();
         r1.setCar(car);
+        r1.setCarModel(carModel);  // Agregar carModel requerido
         r1.setUser(testUser);
         r1.setStartDate(LocalDate.of(2024, 2, 1));
         r1.setEndDate(LocalDate.of(2024, 2, 5));
@@ -74,6 +86,7 @@ class ReservationRepositoryTest {
 
         Reservation r2 = new Reservation();
         r2.setCar(car);
+        r2.setCarModel(carModel);  // Agregar carModel requerido
         r2.setUser(testUser);
         r2.setStartDate(LocalDate.of(2024, 1, 1));
         r2.setEndDate(LocalDate.of(2024, 1, 5));

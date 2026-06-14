@@ -1,6 +1,7 @@
 package com.autoreserve.backend.domain.repository;
 
 import com.autoreserve.backend.domain.entity.*;
+import com.autoreserve.backend.util.TestImageUrls;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,11 @@ class CarRepositoryTest {
     @Autowired
     private CarRepository carRepository;
 
+    @Autowired
+    private CarModelRepository carModelRepository;
+
     private Car testCar;
+    private CarModel testCarModel;
     private Category testCategory;
     private Branch testBranch;
 
@@ -45,14 +50,23 @@ class CarRepositoryTest {
         testBranch.setPhone("987654321");
         entityManager.persist(testBranch);
 
+        // Crear CarModel primero
+        testCarModel = new CarModel();
+        testCarModel.setBrand("Toyota");
+        testCarModel.setModel("RAV4");
+        testCarModel.setYear(2023);
+        testCarModel.setPricePerDay(new BigDecimal("50.00"));
+        testCarModel.setCategory(testCategory);
+        testCarModel.setDescription("Spacious and reliable SUV perfect for family trips and city driving");
+        testCarModel.setImage(TestImageUrls.getImageUrl("Toyota", "RAV4"));
+        entityManager.persist(testCarModel);
+
+        // Crear Car asociado al CarModel
         testCar = new Car();
-        testCar.setBrand("Toyota");
-        testCar.setModel("RAV4");
-        testCar.setYear(2023);
+        testCar.setCarModel(testCarModel);
         testCar.setPlate("ABC123");
-        testCar.setPricePerDay(new BigDecimal("50.00"));
+        testCar.setColor("Rojo");
         testCar.setStatus(CarStatus.AVAILABLE);
-        testCar.setCategory(testCategory);
         testCar.setBranch(testBranch);
         entityManager.persist(testCar);
         entityManager.flush();
@@ -64,19 +78,20 @@ class CarRepositoryTest {
         
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getBrand()).isEqualTo("Toyota");
+        assertThat(result.getContent().get(0).getStatus()).isEqualTo(CarStatus.AVAILABLE);
     }
 
     @Test
-    void findByCategoryIdAndStatus_ReturnsFilteredCars() {
-        Page<Car> result = carRepository.findByCategoryIdAndStatus(
-                testCategory.getId(), CarStatus.AVAILABLE, PageRequest.of(0, 10));
+    void findByCarModelId_ReturnsCarsByModel() {
+        List<Car> result = carRepository.findByCarModelId(testCarModel.getId());
         
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getCategory().getName()).isEqualTo("SUV");
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getCarModel().getBrand()).isEqualTo("Toyota");
+        assertThat(result.get(0).getCarModel().getModel()).isEqualTo("RAV4");
     }
 
     @Test
-    void findAvailableCars_ExcludesReservedCars() {
+    void findAvailableUnitForModel_ExcludesReservedCars() {
         Role role = new Role();
         role.setName("CLIENT");
         entityManager.persist(role);
@@ -91,6 +106,7 @@ class CarRepositoryTest {
 
         Reservation reservation = new Reservation();
         reservation.setCar(testCar);
+        reservation.setCarModel(testCarModel);  // Agregar carModel requerido
         reservation.setUser(user);
         reservation.setStartDate(LocalDate.of(2024, 1, 2));
         reservation.setEndDate(LocalDate.of(2024, 1, 4));
@@ -99,9 +115,35 @@ class CarRepositoryTest {
         entityManager.persist(reservation);
         entityManager.flush();
 
-        List<Car> result = carRepository.findAvailableCars(
-                LocalDate.of(2024, 1, 1), LocalDate.of(2024, 1, 5), null);
+        // Buscar unidades disponibles para el modelo en fechas que se solapan
+        List<Car> result = carRepository.findAvailableUnitForModel(
+                testCarModel.getId(),
+                LocalDate.of(2024, 1, 1), 
+                LocalDate.of(2024, 1, 5)
+        );
         
+        // Debería estar vacío porque el auto está reservado en esas fechas
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void countAvailableByModel_ReturnsCorrectCount() {
+        long count = carRepository.countAvailableByModel(testCarModel.getId());
+        assertThat(count).isEqualTo(1);
+        
+        // Cambiar estado a mantenimiento
+        testCar.setStatus(CarStatus.MAINTENANCE);
+        entityManager.merge(testCar);
+        entityManager.flush();
+        
+        count = carRepository.countAvailableByModel(testCarModel.getId());
+        assertThat(count).isEqualTo(0);
+    }
+
+    @Test
+    void findByPlate_ReturnsCarWithPlate() {
+        var result = carRepository.findByPlate("ABC123");
+        assertThat(result).isPresent();
+        assertThat(result.get().getBrand()).isEqualTo("Toyota");
     }
 }
