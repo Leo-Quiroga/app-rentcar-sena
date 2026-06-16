@@ -1,5 +1,3 @@
-export const API_URL = "http://localhost:8080";
-
 // Función genérica para hacer peticiones a la API
 export async function apiFetch(endpoint, options = {}) {
   const auth = localStorage.getItem("auth");
@@ -11,7 +9,7 @@ export async function apiFetch(endpoint, options = {}) {
     ...options.headers
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const response = await fetch(endpoint, {
     ...options,
     headers
   });

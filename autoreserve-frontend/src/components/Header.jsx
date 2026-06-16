@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { getUnreadCount } from "../api/contactApi";
 import { useFavorites } from "../utils/useFavorites";
+import logoWhite from "../assets/logowhite.png";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,7 +51,7 @@ export default function Header() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3" aria-label="Ir al inicio - AutoReserve">
-          <img src="/src/assets/logowhite.png" alt="AutoReserve" className="h-16 w-auto object-contain" />
+          <img src={logoWhite} alt="AutoReserve" className="h-16 w-auto object-contain"/>
           <span className="font-display text-2xl font-bold leading-none">AutoReserve</span>
         </Link>
 

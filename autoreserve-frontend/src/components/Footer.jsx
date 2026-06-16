@@ -1,6 +1,7 @@
 // Componente para el pie de página
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import logoWhite from "../assets/logowhite.png";
 
 export default function Footer() {
   const { user } = useAuth();
@@ -13,8 +14,7 @@ export default function Footer() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <img src="/src/assets/logowhite.png" alt="AutoReserve"
-            className="h-10 sm:h-12 md:h-14 w-auto object-contain" />
+          <img src={logoWhite} alt="AutoReserve" className="h-10 sm:h-12 md:h-14 w-auto object-contain"/>
           <p className="font-display text-base text-gray-400">AutoReserve</p>
         </Link>
 
