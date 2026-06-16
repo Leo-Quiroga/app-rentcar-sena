@@ -76,7 +76,7 @@ export default function FavoriteButton({
           await removeFromFavorites(carModelId);
           updateFavorite(carModelId, false);
         } catch (removeError) {
-          alert('Error al actualizar favoritos. Intenta recargar la página.');
+          alert('Error al actualizar favoritos. Intenta recargar la página.' + removeError.message);
         }
       } else if (error.message?.includes('no está en')) {
         // No es favorito - intentar agregar
@@ -84,7 +84,7 @@ export default function FavoriteButton({
           await addToFavorites(carModelId);
           updateFavorite(carModelId, true);
         } catch (addError) {
-          alert('Error al actualizar favoritos. Intenta recargar la página.');
+          alert('Error al actualizar favoritos. Intenta recargar la página.' + addError.message);
         }
       } else {
         // Otros errores

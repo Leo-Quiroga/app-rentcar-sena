@@ -1,8 +1,6 @@
 // Utilidades para manejo de imágenes
 export const getImageUrl = (imagePath, type = 'car') => {
-  // Debug temporal
-  console.log(`getImageUrl called with: "${imagePath}", type: "${type}"`);
-  
+    
   // Si no hay imagen, usar placeholder
   if (!imagePath) {
     return getPlaceholderImage(type);
@@ -19,14 +17,12 @@ export const getImageUrl = (imagePath, type = 'car') => {
     const match = imagePath.match(/src[\\\/]assets[\\\/].+/);
     if (match) {
       const converted = '/' + match[0].replace(/\\/g, '/');
-      console.log(`Windows path converted: "${imagePath}" -> "${converted}"`);
       return converted;
     }
     // Si no encuentra src/assets, pero contiene assets, intentar extraer desde assets
     const assetsMatch = imagePath.match(/assets[\\\/].+/);
     if (assetsMatch) {
       const converted = '/src/' + assetsMatch[0].replace(/\\/g, '/');
-      console.log(`Assets path converted: "${imagePath}" -> "${converted}"`);
       return converted;
     }
   }

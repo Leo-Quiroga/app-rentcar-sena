@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { getUnreadCount } from "../api/contactApi";
 import { useFavorites } from "../utils/useFavorites";
-import logoWhite from "../assets/logowhite.png";
+import  logoWhite from "C:/Users/NatyLeo/Desktop/autoreserve-app-rentcar/autoreserve-frontend/src/assets/logowhite.png";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,7 +51,7 @@ export default function Header() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3" aria-label="Ir al inicio - AutoReserve">
-          <img src={logoWhite} alt="AutoReserve" className="h-16 w-auto object-contain"/>
+          <img src={logoWhite} alt="AutoReserve" className="h-14 sm:h-20 md:h-28 w-auto object-contain"/>
           <span className="font-display text-2xl font-bold leading-none">AutoReserve</span>
         </Link>
 
