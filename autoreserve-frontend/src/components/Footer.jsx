@@ -1,8 +1,7 @@
 // Componente para el pie de página
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import logoWhite from "C:/Users/NatyLeo/Desktop/autoreserve-app-rentcar/autoreserve-frontend/src/assets/logowhite.png";
-
+import logoWhite from "../assets/logowhite.png";
 export default function Footer() {
   const { user } = useAuth();
   const isLoggedIn = Boolean(user);

@@ -4,8 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { getUnreadCount } from "../api/contactApi";
 import { useFavorites } from "../utils/useFavorites";
-import  logoWhite from "C:/Users/NatyLeo/Desktop/autoreserve-app-rentcar/autoreserve-frontend/src/assets/logowhite.png";
-
+import logoWhite from "../assets/logowhite.png";
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
