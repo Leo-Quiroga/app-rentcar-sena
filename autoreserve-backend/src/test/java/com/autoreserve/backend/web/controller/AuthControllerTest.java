@@ -174,4 +174,66 @@ class AuthControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false));
     }
+
+    @Test
+    void login_MissingEmail_ReturnsBadRequest() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("");
+        request.setPassword("password123");
+
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error").value("El correo es requerido"));
+    }
+
+    @Test
+    void login_MissingPassword_ReturnsBadRequest() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@example.com");
+        request.setPassword("");
+
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error").value("La contraseña es requerida"));
+    }
+
+    @Test
+    void register_InvalidEmail_ReturnsBadRequest() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("invalid-email");
+        request.setPassword("password123");
+        request.setFirstName("Test");
+        request.setLastName("User");
+        request.setPhone("1234567890");
+
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_RoleNotFound_ReturnsInternalServerError() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("new@example.com");
+        request.setPassword("password123");
+        request.setFirstName("New");
+        request.setLastName("User");
+        request.setPhone("1234567890");
+
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(roleRepository.findByName("CLIENT")).thenReturn(Optional.empty());
+
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false));
+    }
 }

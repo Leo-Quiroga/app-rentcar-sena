@@ -23,4 +23,8 @@ public class NotificationService {
     public List<Notification> findAll() {
         return notificationRepository.findAll();
     }
+
+    public Optional<Notification> findById(Long id) {
+        return notificationRepository.findById(id);
+    }
 }

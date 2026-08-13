@@ -109,6 +109,11 @@ public class FavoriteController {
             Long carModelId = request.get("carModelId");
             System.out.println("Extracted carModelId: " + carModelId);
             
+            if (principal == null || principal.getUsername() == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "error", "Usuario no autenticado"));
+            }
+
             if (carModelId == null) {
                 System.out.println("ERROR: carModelId is null");
                 return ResponseEntity.badRequest()
@@ -151,21 +156,16 @@ public class FavoriteController {
         } catch (RuntimeException e) {
             System.out.println("RuntimeException: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", e.getMessage()));
-        } catch (Exception e) {
-            System.out.println("General Exception: " + e.getMessage());
-            e.printStackTrace();
-            // Manejar errores de constraint de BD
             String errorMessage = e.getMessage();
-            if (errorMessage != null && (errorMessage.contains("Duplicate entry") || 
-                                       errorMessage.contains("constraint") ||
-                                       errorMessage.contains("unique"))) {
+            String errorText = errorMessage != null ? errorMessage.toLowerCase() : "";
+            if (errorText.contains("duplicate entry") ||
+                    errorText.contains("constraint") ||
+                    errorText.contains("unique")) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("success", false, "error", "El modelo ya está en tu lista de favoritos"));
             }
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", "Error interno del servidor", "details", errorMessage));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", errorMessage));
         }
     }
 

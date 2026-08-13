@@ -68,7 +68,7 @@ public class ContactMessageController {
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
+                    .body(Map.of("success", false, "error", safeErrorMessage(e)));
         }
     }
 
@@ -109,7 +109,7 @@ public class ContactMessageController {
             return ResponseEntity.ok(tickets.stream().map(this::toSummary).toList());
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
+                    .body(Map.of("success", false, "error", safeErrorMessage(e)));
         }
     }
 
@@ -144,7 +144,7 @@ public class ContactMessageController {
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
+                    .body(Map.of("success", false, "error", safeErrorMessage(e)));
         }
     }
 
@@ -182,7 +182,7 @@ public class ContactMessageController {
             return ResponseEntity.ok(Map.of("success", true, "message", "Respuesta enviada"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
+                    .body(Map.of("success", false, "error", safeErrorMessage(e)));
         }
     }
 
@@ -208,7 +208,7 @@ public class ContactMessageController {
             return ResponseEntity.ok(Map.of("success", true, "message", "Caso cerrado exitosamente"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
+                    .body(Map.of("success", false, "error", safeErrorMessage(e)));
         }
     }
 
@@ -260,7 +260,7 @@ public class ContactMessageController {
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
+                    .body(Map.of("success", false, "error", safeErrorMessage(e)));
         }
     }
 
@@ -287,7 +287,7 @@ public class ContactMessageController {
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
+                    .body(Map.of("success", false, "error", safeErrorMessage(e)));
         }
     }
 
@@ -321,7 +321,7 @@ public class ContactMessageController {
             return ResponseEntity.ok(Map.of("success", true, "message", "Respuesta enviada al cliente"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
+                    .body(Map.of("success", false, "error", safeErrorMessage(e)));
         }
     }
 
@@ -338,11 +338,15 @@ public class ContactMessageController {
             return ResponseEntity.ok(Map.of("success", true, "message", "Ticket cerrado"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
+                    .body(Map.of("success", false, "error", safeErrorMessage(e)));
         }
     }
 
     // ── HELPERS ──────────────────────────────────────────────────────────────
+
+    private String safeErrorMessage(Exception e) {
+        return e.getMessage() != null ? e.getMessage() : "Error interno del servidor";
+    }
 
     private Map<String, Object> toSummary(ContactMessage t) {
         return Map.of(
@@ -368,3 +372,10 @@ public class ContactMessageController {
         );
     }
 }
+
+
+
+
+
+
+
