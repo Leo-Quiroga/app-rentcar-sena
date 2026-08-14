@@ -38,12 +38,14 @@ export default function CarCard({
     <article className="bg-white shadow-md rounded-lg overflow-hidden flex flex-col transition hover:shadow-lg">
       {/* Imagen con badge de disponibilidad y botón de favorito */}
       <div className="relative">
-        <img
-          src={getImageUrl(car?.image, 'car')}
-          alt={`Imagen de ${carName}`}
-          className="h-40 w-full object-cover"
-          onError={e => { e.target.src = getImageUrl(null, 'car'); }}
-        />
+        <div className="h-48 w-full overflow-hidden bg-gray-100">
+          <img
+            src={getImageUrl(car?.image, 'car')}
+            alt={`Imagen de ${carName}`}
+            className="w-full h-full object-cover object-center"
+            onError={e => { e.target.src = getImageUrl(null, 'car'); }}
+          />
+        </div>
         
         {/* Badge de disponibilidad */}
         {availableUnits !== null && (

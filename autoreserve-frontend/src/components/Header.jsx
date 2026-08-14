@@ -2,38 +2,21 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
-import { getUnreadCount } from "../api/contactApi";
+import { useMessages } from "../contexts/MessagesContext";
 import { useFavorites } from "../utils/useFavorites";
 import logoWhite from "../assets/logowhite.png";
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuth();
+  const { unreadCount } = useMessages();
   const { count: favoritesCount } = useFavorites();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Cargar conteo de mensajes no leídos
-  useEffect(() => {
-    if (!user) { setUnreadCount(0); return; }
-
-    const fetchCount = () => {
-      getUnreadCount()
-        .then(data => setUnreadCount(data.unreadCount || 0))
-        .catch(() => setUnreadCount(0));
-    };
-
-    fetchCount();
-    // Actualizar cada 60 segundos
-    const interval = setInterval(fetchCount, 60000);
-    return () => clearInterval(interval);
-  }, [user, location.pathname]); // Re-consultar al cambiar de página
-
   const handleLogout = () => {
     logout();
     setIsProfileOpen(false);
-    setUnreadCount(0);
     navigate("/", { replace: true });
   };
 

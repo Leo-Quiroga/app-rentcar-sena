@@ -151,70 +151,67 @@ public class AdminReservationController {
             ReservationStatus newStatus = ReservationStatus.valueOf(status.toUpperCase());
             ReservationStatus oldStatus = reservation.getStatus();
 
-            // VALIDACIÓN ESTRICTA: Si cambia de PENDING a CONFIRMED
-            if (oldStatus == ReservationStatus.PENDING && newStatus == ReservationStatus.CONFIRMED) {
-                // 1. Verificar que el pago esté confirmado PRIMERO
+            // CONFIRMED: asegurar pago PAID y asignar auto
+            if (newStatus == ReservationStatus.CONFIRMED) {
+                // Ajuste automático de pago si no está PAID
                 if (reservation.getPaymentStatus() != PaymentStatus.PAID) {
-                    return ResponseEntity.badRequest().body(Map.of(
-                        "success", false, 
-                        "error", "No se puede confirmar una reserva sin pago. Debe cambiar PRIMERO el estado de pago a PAID."
-                    ));
+                    reservation.setPaymentStatus(PaymentStatus.PAID);
                 }
-                
-                // 2. Buscar auto disponible del modelo para las fechas
+                // Buscar auto disponible
                 List<Car> availableUnits = carRepository.findAvailableUnitForModel(
                         reservation.getCarModel().getId(),
                         reservation.getStartDate(),
                         reservation.getEndDate());
-
-                // 3. Si no hay autos disponibles, BLOQUEAR el cambio
                 if (availableUnits.isEmpty()) {
                     return ResponseEntity.badRequest().body(Map.of(
                             "success", false,
-                            "error", "No se puede confirmar la reserva: No hay unidades disponibles del modelo " + 
-                                   reservation.getCarModel().getBrand() + " " + reservation.getCarModel().getModel() + 
-                                   " para las fechas " + reservation.getStartDate() + " - " + reservation.getEndDate() + 
-                                   ". La reserva permanece en estado PENDING."
+                            "error", "No hay unidades disponibles del modelo " +
+                                   reservation.getCarModel().getBrand() + " " + reservation.getCarModel().getModel() +
+                                   " para las fechas " + reservation.getStartDate() + " - " + reservation.getEndDate()
                     ));
                 }
-
-                // 4. Asignar la primera unidad disponible - NO marcar como RENTED hasta fecha de inicio
-                Car assignedCar = availableUnits.get(0);
-                // El auto permanece AVAILABLE hasta que inicie la reserva
-                reservation.setCar(assignedCar);
-                
-                System.out.println("✅ Admin confirmó reserva " + id + ": Auto " + assignedCar.getPlate() + 
-                                 " (ID: " + assignedCar.getId() + ") asignado, permanece AVAILABLE hasta fecha de inicio");
+                reservation.setCar(availableUnits.get(0));
             }
 
-            // Si cancela una reserva CONFIRMED, liberar el auto y procesar reembolso
-            if (newStatus == ReservationStatus.CANCELLED && reservation.getCar() != null
-                    && reservation.getStatus() == ReservationStatus.CONFIRMED) {
-                reservation.getCar().setStatus(CarStatus.AVAILABLE);
-                carRepository.save(reservation.getCar());
-                // Si tenía pago confirmado, procesar reembolso
+            // IN_PROGRESS o COMPLETED: asegurar pago PAID
+            if (newStatus == ReservationStatus.IN_PROGRESS || newStatus == ReservationStatus.COMPLETED) {
+                if (reservation.getPaymentStatus() != PaymentStatus.PAID) {
+                    reservation.setPaymentStatus(PaymentStatus.PAID);
+                }
+                if (newStatus == ReservationStatus.COMPLETED && reservation.getCar() != null) {
+                    reservation.getCar().setStatus(CarStatus.AVAILABLE);
+                    carRepository.save(reservation.getCar());
+                }
+            }
+
+            // PENDING: revertir pago a NO_PAYMENT
+            if (newStatus == ReservationStatus.PENDING) {
+                reservation.setPaymentStatus(PaymentStatus.NO_PAYMENT);
+            }
+
+            // CANCELLED: liberar auto y gestionar reembolso
+            if (newStatus == ReservationStatus.CANCELLED) {
+                if (reservation.getCar() != null) {
+                    reservation.getCar().setStatus(CarStatus.AVAILABLE);
+                    carRepository.save(reservation.getCar());
+                }
                 if (reservation.getPaymentStatus() == PaymentStatus.PAID) {
                     reservation.setPaymentStatus(PaymentStatus.REFUND_PENDING);
+                } else if (reservation.getPaymentStatus() != PaymentStatus.REFUND_PENDING
+                        && reservation.getPaymentStatus() != PaymentStatus.REFUNDED) {
+                    reservation.setPaymentStatus(PaymentStatus.NO_PAYMENT);
                 }
-                System.out.println("🔓 Auto " + reservation.getCar().getPlate() + " liberado por cancelación de reserva " + id);
-            }
-
-            // Si completa, liberar el auto
-            if (newStatus == ReservationStatus.COMPLETED && reservation.getCar() != null) {
-                reservation.getCar().setStatus(CarStatus.AVAILABLE);
-                carRepository.save(reservation.getCar());
-                System.out.println("🔓 Auto " + reservation.getCar().getPlate() + " liberado por completar reserva " + id);
             }
 
             reservation.setStatus(newStatus);
             reservationRepository.save(reservation);
 
             return ResponseEntity.ok(Map.of(
-                "success", true, 
-                "message", "Estado actualizado exitosamente" + 
-                          (reservation.getCar() != null ? ". Auto " + reservation.getCar().getPlate() + " asignado." : ""),
-                "reservationId", id, 
+                "success", true,
+                "message", "Estado actualizado exitosamente",
+                "reservationId", id,
                 "newStatus", newStatus.name(),
+                "newPaymentStatus", reservation.getPaymentStatus().name(),
                 "assignedCarId", reservation.getCar() != null ? reservation.getCar().getId() : null
             ));
         } catch (IllegalArgumentException e) {
@@ -224,17 +221,50 @@ public class AdminReservationController {
         }
     }
 
-    /** Admin edita el estado de pago manualmente */
+    /** Admin edita el estado de pago con ajuste automático de estado */
     @PutMapping("/{id}/payment-status")
     public ResponseEntity<?> updatePaymentStatus(@PathVariable Long id, @RequestParam String paymentStatus) {
         try {
             Reservation reservation = reservationRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Reserva no encontrada con ID: " + id));
             PaymentStatus newPaymentStatus = PaymentStatus.valueOf(paymentStatus.toUpperCase());
+
+            // PAID: confirmar reserva automáticamente si estaba PENDING
+            if (newPaymentStatus == PaymentStatus.PAID
+                    && reservation.getStatus() == ReservationStatus.PENDING) {
+                List<Car> availableUnits = carRepository.findAvailableUnitForModel(
+                        reservation.getCarModel().getId(),
+                        reservation.getStartDate(),
+                        reservation.getEndDate());
+                if (availableUnits.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                            "success", false,
+                            "error", "No hay unidades disponibles del modelo " +
+                                   reservation.getCarModel().getBrand() + " " + reservation.getCarModel().getModel() +
+                                   " para las fechas indicadas"
+                    ));
+                }
+                reservation.setCar(availableUnits.get(0));
+                reservation.setStatus(ReservationStatus.CONFIRMED);
+            }
+
+            // NO_PAYMENT: revertir a PENDING si estaba CONFIRMED
+            if (newPaymentStatus == PaymentStatus.NO_PAYMENT
+                    && reservation.getStatus() == ReservationStatus.CONFIRMED) {
+                reservation.setCar(null);
+                reservation.setStatus(ReservationStatus.PENDING);
+            }
+
             reservation.setPaymentStatus(newPaymentStatus);
             reservationRepository.save(reservation);
-            return ResponseEntity.ok(Map.of("success", true, "message", "Estado de pago actualizado",
-                    "reservationId", id, "newPaymentStatus", newPaymentStatus.name()));
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Estado de pago actualizado",
+                "reservationId", id,
+                "newPaymentStatus", newPaymentStatus.name(),
+                "newStatus", reservation.getStatus().name()
+            ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Estado de pago inválido: " + paymentStatus));
         } catch (RuntimeException e) {

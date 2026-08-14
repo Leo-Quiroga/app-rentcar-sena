@@ -9,13 +9,16 @@ import App from './App.jsx'
 import './styles/index.css'
 // Importar el proveedor de autenticación
 import { AuthProvider } from "./auth/AuthProvider";
+import { MessagesProvider } from "./contexts/MessagesContext";
 // Renderizar la aplicación dentro del proveedor de autenticación y el enrutador
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+      <BrowserRouter>
+        <MessagesProvider>
+          <App />
+        </MessagesProvider>
+      </BrowserRouter>
     </AuthProvider>
   </StrictMode>,
 )

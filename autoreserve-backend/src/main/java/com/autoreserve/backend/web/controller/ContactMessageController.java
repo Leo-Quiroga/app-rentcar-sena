@@ -349,17 +349,17 @@ public class ContactMessageController {
     }
 
     private Map<String, Object> toSummary(ContactMessage t) {
-        return Map.of(
-            "id", t.getId(),
-            "senderName", t.getSenderName(),
-            "senderEmail", t.getSenderEmail(),
-            "subject", t.getSubject(),
-            "type", t.getType().name(),
-            "status", t.getStatus().name(),
-            "createdAt", t.getCreatedAt().toString(),
-            "updatedAt", t.getUpdatedAt() != null ? t.getUpdatedAt().toString() : "",
-            "userId", t.getUser() != null ? t.getUser().getId() : null
-        );
+        Map<String, Object> map = new java.util.HashMap<>();
+        map.put("id", t.getId());
+        map.put("senderName", t.getSenderName());
+        map.put("senderEmail", t.getSenderEmail());
+        map.put("subject", t.getSubject());
+        map.put("type", t.getType().name());
+        map.put("status", t.getStatus().name());
+        map.put("createdAt", t.getCreatedAt().toString());
+        map.put("updatedAt", t.getUpdatedAt() != null ? t.getUpdatedAt().toString() : "");
+        map.put("userId", t.getUser() != null ? t.getUser().getId() : null);
+        return map;
     }
 
     private Map<String, Object> toReplyMap(MessageReply r) {

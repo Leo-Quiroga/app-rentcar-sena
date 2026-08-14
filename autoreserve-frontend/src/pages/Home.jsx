@@ -263,7 +263,7 @@ export default function Home() {
               : "Recomendados para ti"}
           </h2>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {cars.map((car) => (
               <CarCard
                 key={car.id}

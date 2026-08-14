@@ -1,11 +1,13 @@
 // Pantalla de inicio de sesión
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../auth/useAuth";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const sessionExpired = new URLSearchParams(location.search).get("expired") === "true";
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,6 +91,14 @@ export default function Login() {
         <h1 className="text-2xl font-bold text-center text-neutral-dark mb-6">
           Iniciar sesión
         </h1>
+
+        {sessionExpired && (
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3 mb-4">
+            <p className="text-sm text-yellow-800 flex items-center gap-2">
+              <span>⏰</span> Tu sesión ha expirado. Por favor inicia sesión nuevamente.
+            </p>
+          </div>
+        )}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>

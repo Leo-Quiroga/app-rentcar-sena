@@ -1,7 +1,8 @@
 // Mis mensajes de soporte — vista del cliente
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getMyTickets, getMyTicketDetail, clientReply, closeTicket } from "../api/contactApi";
+import { getMyTicketDetail, clientReply, closeTicket } from "../api/contactApi";
+import { useMessages } from "../contexts/MessagesContext";
 
 const STATUS_CONFIG = {
   OPEN:        { label: "Abierto",     pill: "bg-red-100 text-red-700" },
@@ -145,16 +146,10 @@ function TicketThread({ ticketId, onBack }) {
 
 export default function MyMessages() {
   const navigate = useNavigate();
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { tickets, loading, refresh } = useMessages();
   const [selectedId, setSelectedId] = useState(null);
 
-  useEffect(() => {
-    getMyTickets()
-      .then(setTickets)
-      .catch(err => alert("Error: " + err.message))
-      .finally(() => setLoading(false));
-  }, []);
+  useEffect(() => { refresh(); }, []);
 
   if (loading) return (
     <div className="max-w-4xl mx-auto py-10 px-4 text-center">

@@ -40,6 +40,9 @@ export default function AdminReservations() {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
+
+  const toggleExpand = (id) => setExpandedId(prev => prev === id ? null : id);
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -74,31 +77,31 @@ export default function AdminReservations() {
 
   const handleStatusChange = async (reservationId, newStatus) => {
     try {
-      await updateReservationStatus(reservationId, newStatus);
-      // Actualizar el estado local inmediatamente
+      const res = await updateReservationStatus(reservationId, newStatus);
       setReservations(prev =>
-        prev.map(r => r.id === reservationId ? { ...r, status: newStatus } : r)
+        prev.map(r => r.id === reservationId ? {
+          ...r,
+          status: res.newStatus || newStatus,
+          paymentStatus: res.newPaymentStatus || r.paymentStatus
+        } : r)
       );
-      
-      // Mostrar mensaje de éxito si se asignó auto
-      if (newStatus === 'CONFIRMED') {
-        // Recargar la reserva para obtener el auto asignado
-        setTimeout(() => loadReservations(), 500);
-      }
+      if (newStatus === 'CONFIRMED') setTimeout(() => loadReservations(), 500);
     } catch (err) {
-      // Mostrar error detallado al admin
-      const errorMessage = err.message || 'Error actualizando estado';
-      alert(`Error: ${errorMessage}`);
-      console.error('Error actualizando estado:', err);
+      alert(`Error: ${err.message}`);
     }
   };
 
   const handlePaymentStatusChange = async (reservationId, newPaymentStatus) => {
     try {
-      await updatePaymentStatus(reservationId, newPaymentStatus);
+      const res = await updatePaymentStatus(reservationId, newPaymentStatus);
       setReservations(prev =>
-        prev.map(r => r.id === reservationId ? { ...r, paymentStatus: newPaymentStatus } : r)
+        prev.map(r => r.id === reservationId ? {
+          ...r,
+          paymentStatus: res.newPaymentStatus || newPaymentStatus,
+          status: res.newStatus || r.status
+        } : r)
       );
+      if (res.newStatus === 'CONFIRMED') setTimeout(() => loadReservations(), 500);
     } catch (err) {
       alert("Error actualizando estado de pago: " + err.message);
     }
@@ -203,84 +206,123 @@ export default function AdminReservations() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white shadow rounded-lg overflow-x-auto">
-        {/* Nota informativa para admins */}
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-3 text-sm text-blue-700">
-          <p><strong>📝 Importante:</strong> Para confirmar una reserva PENDING, primero cambia el estado de pago a <strong>PAID</strong>, luego cambia el estado a <strong>CONFIRMED</strong>. El sistema asignará automáticamente un auto disponible.</p>
+      <div className="bg-white shadow rounded-lg overflow-hidden">
+
+        {/* Tarjetas móvil (< md) */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {sorted.map(r => (
+            <div key={r.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-gray-800">{r.carBrand} {r.carModel}</p>
+                  <p className="text-xs text-gray-500">{r.categoryName} · {r.carYear}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">#{r.id} · {r.userFirstName} {r.userLastName}</p>
+                </div>
+                <Pill value={r.status} config={STATUS_CONFIG} />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                <div><span className="font-medium">Retiro:</span> {r.startDate}</div>
+                <div><span className="font-medium">Entrega:</span> {r.endDate}</div>
+                <div><span className="font-medium">Sede retiro:</span> {r.pickupBranchName}</div>
+                <div><span className="font-medium">Sede entrega:</span> {r.dropoffBranchName}</div>
+                <div><span className="font-medium">Días:</span> {r.totalDays}</div>
+                <div><span className="font-medium">Total:</span> ${r.totalAmount?.toLocaleString()}</div>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <select value={r.status} onChange={e => handleStatusChange(r.id, e.target.value)}
+                  className={`flex-1 px-2 py-1 rounded text-xs font-medium border border-gray-200 ${STATUS_CONFIG[r.status]?.pill || "bg-gray-100 text-gray-600"}`}>
+                  {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+                <select value={r.paymentStatus} onChange={e => handlePaymentStatusChange(r.id, e.target.value)}
+                  className={`flex-1 px-2 py-1 rounded text-xs font-medium border border-gray-200 ${PAYMENT_CONFIG[r.paymentStatus]?.pill || "bg-gray-100 text-gray-600"}`}>
+                  {Object.entries(PAYMENT_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              </div>
+              <div className="flex gap-2">
+                {r.status !== "CANCELLED" && r.status !== "COMPLETED" && (
+                  <button onClick={() => handleStatusChange(r.id, "CANCELLED")}
+                    className="text-xs px-3 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50 transition">
+                    Cancelar
+                  </button>
+                )}
+                <button onClick={() => navigate(`/admin/reservas/${r.id}`)}
+                  className="text-xs px-3 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
+                  Ver
+                </button>
+              </div>
+            </div>
+          ))}
+          {sorted.length === 0 && (
+            <p className="text-center py-10 text-gray-500">
+              {hasFilters ? "No hay reservas con los filtros aplicados." : "No hay reservas registradas."}
+            </p>
+          )}
         </div>
-        
-        <table className="w-full table-auto text-sm">
+
+        {/* Tabla md+ con todas las columnas, compacta en tamaños intermedios */}
+        <table className="hidden md:table w-full text-xs xl:text-sm">
           <thead className="bg-gray-50 text-left border-b">
             <tr>
-              {[
-                { col: "id",             label: "ID" },
-                { col: "carBrand",       label: "Vehículo" },
-                { col: "userLastName",   label: "Cliente" },
-                { col: "startDate",      label: "Fechas" },
-                { col: "pickupBranchName", label: "Sedes" },
-                { col: "totalDays",      label: "Días" },
-                { col: "totalAmount",    label: "Total" },
-                { col: "status",         label: "Estado" },
-                { col: "paymentStatus",  label: "Pago" },
-              ].map(({ col, label }) => (
-                <th key={col} onClick={() => handleSort(col)}
-                  className="px-4 py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
-                  {label}<SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
-                </th>
-              ))}
-              <th className="px-4 py-3 font-semibold text-gray-700 text-center">Acciones</th>
+              <th className="px-2 xl:px-4 py-2 xl:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("id")}>ID<SortIcon col="id" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 xl:px-4 py-2 xl:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("carBrand")}>Vehículo<SortIcon col="carBrand" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 xl:px-4 py-2 xl:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("userLastName")}>Cliente<SortIcon col="userLastName" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 xl:px-4 py-2 xl:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("startDate")}>Fechas<SortIcon col="startDate" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 xl:px-4 py-2 xl:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("pickupBranchName")}>Sedes<SortIcon col="pickupBranchName" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 xl:px-4 py-2 xl:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("totalDays")}>Días<SortIcon col="totalDays" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 xl:px-4 py-2 xl:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("totalAmount")}>Total<SortIcon col="totalAmount" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 xl:px-4 py-2 xl:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("status")}><span className="xl:hidden">Estado / Pago</span><span className="hidden xl:inline">Estado</span><SortIcon col="status" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="hidden xl:table-cell px-2 xl:px-4 py-2 xl:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("paymentStatus")}>Pago<SortIcon col="paymentStatus" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 xl:px-4 py-2 xl:py-3 font-semibold text-gray-700 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {sorted.map(r => (
               <tr key={r.id} className="border-t hover:bg-gray-50 transition">
-                <td className="px-4 py-3 font-medium text-gray-700">#{r.id}</td>
-                <td className="px-4 py-3">
-                  <p className="font-medium">{r.carBrand} {r.carModel}</p>
-                  <p className="text-xs text-gray-500">{r.categoryName} · {r.carYear}</p>
+                <td className="px-2 xl:px-4 py-2 xl:py-3 font-medium text-gray-700">#{r.id}</td>
+                <td className="px-2 xl:px-4 py-2 xl:py-3">
+                  <p className="font-medium leading-tight">{r.carBrand} {r.carModel}</p>
+                  <p className="text-gray-500 leading-tight">{r.categoryName} · {r.carYear}</p>
                 </td>
-                <td className="px-4 py-3">
-                  <p className="font-medium">{r.userFirstName} {r.userLastName}</p>
-                  <p className="text-xs text-gray-500">#{r.userId} · {r.userEmail}</p>
+                <td className="px-2 xl:px-4 py-2 xl:py-3">
+                  <p className="font-medium leading-tight">{r.userFirstName} {r.userLastName}</p>
+                  <p className="text-gray-500 leading-tight">{r.userEmail}</p>
                 </td>
-                <td className="px-4 py-3 text-xs">
-                  <p><span className="font-medium">Retiro:</span> {r.startDate}</p>
-                  <p><span className="font-medium">Entrega:</span> {r.endDate}</p>
+                <td className="px-2 xl:px-4 py-2 xl:py-3">
+                  <p><span className="font-medium">↑</span> {r.startDate}</p>
+                  <p><span className="font-medium">↓</span> {r.endDate}</p>
                 </td>
-                <td className="px-4 py-3 text-xs">
-                  <p><span className="font-medium">↑</span> {r.pickupBranchName}</p>
-                  <p><span className="font-medium">↓</span> {r.dropoffBranchName}</p>
+                <td className="px-2 xl:px-4 py-2 xl:py-3">
+                  <p className="leading-tight">{r.pickupBranchName}</p>
+                  <p className="leading-tight">{r.dropoffBranchName}</p>
                 </td>
-                <td className="px-4 py-3 text-center">{r.totalDays}</td>
-                <td className="px-4 py-3 font-medium">${r.totalAmount?.toLocaleString()}</td>
-                <td className="px-4 py-3">
+                <td className="px-2 xl:px-4 py-2 xl:py-3 text-center">{r.totalDays}</td>
+                <td className="px-2 xl:px-4 py-2 xl:py-3 font-medium">${r.totalAmount?.toLocaleString()}</td>
+                <td className="px-2 xl:px-4 py-2 xl:py-3">
                   <select value={r.status} onChange={e => handleStatusChange(r.id, e.target.value)}
-                    className={`px-2 py-1 rounded text-xs font-medium border border-gray-200 cursor-pointer ${STATUS_CONFIG[r.status]?.pill || "bg-gray-100 text-gray-600"}`}>
-                    {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                      <option key={k} value={k}>{v.label}</option>
-                    ))}
+                    className={`px-1 py-1 rounded text-xs font-medium border border-gray-200 cursor-pointer w-full ${STATUS_CONFIG[r.status]?.pill || "bg-gray-100 text-gray-600"}`}>
+                    {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
-                </td>
-                <td className="px-4 py-3">
-                  {/* Admin puede editar estado de pago */}
                   <select value={r.paymentStatus} onChange={e => handlePaymentStatusChange(r.id, e.target.value)}
-                    className={`px-2 py-1 rounded text-xs font-medium border border-gray-200 cursor-pointer ${PAYMENT_CONFIG[r.paymentStatus]?.pill || "bg-gray-100 text-gray-600"}`}>
-                    {Object.entries(PAYMENT_CONFIG).map(([k, v]) => (
-                      <option key={k} value={k}>{v.label}</option>
-                    ))}
+                    className={`xl:hidden mt-1 px-1 py-1 rounded text-xs font-medium border border-gray-200 cursor-pointer w-full ${PAYMENT_CONFIG[r.paymentStatus]?.pill || "bg-gray-100 text-gray-600"}`}>
+                    {Object.entries(PAYMENT_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </td>
-                <td className="px-4 py-3">
+                <td className="hidden xl:table-cell px-2 xl:px-4 py-2 xl:py-3">
+                  <select value={r.paymentStatus} onChange={e => handlePaymentStatusChange(r.id, e.target.value)}
+                    className={`px-1 py-1 rounded text-xs font-medium border border-gray-200 cursor-pointer w-full ${PAYMENT_CONFIG[r.paymentStatus]?.pill || "bg-gray-100 text-gray-600"}`}>
+                    {Object.entries(PAYMENT_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                  </select>
+                </td>
+                <td className="px-2 xl:px-4 py-2 xl:py-3">
                   <div className="flex gap-1 justify-center flex-wrap">
                     {r.status !== "CANCELLED" && r.status !== "COMPLETED" && (
                       <button onClick={() => handleStatusChange(r.id, "CANCELLED")}
-                        className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50 transition">
+                        className="px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50 transition">
                         Cancelar
                       </button>
                     )}
-                    {/* Fix: navegar a ruta del admin, no del cliente */}
                     <button onClick={() => navigate(`/admin/reservas/${r.id}`)}
-                      className="text-xs px-2 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
+                      className="px-2 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
                       Ver
                     </button>
                   </div>

@@ -15,20 +15,22 @@ export async function apiFetch(endpoint, options = {}) {
   });
 
   if (!response.ok) {
+    // Sesión expirada o token inválido — limpiar y redirigir al login
+    if (response.status === 401) {
+      localStorage.removeItem("auth");
+      window.location.href = "/login?expired=true";
+      return;
+    }
+
     const errorData = await response.json().catch(() => ({}));
     
-    // Manejar nuevos formatos de error del backend
     let errorMessage;
     if (errorData.success === false) {
       errorMessage = errorData.error || "Error en la petición";
     } else {
-      // Mantener compatibilidad con formato anterior
       switch (response.status) {
         case 400:
           errorMessage = errorData.error || errorData.message || "Datos inválidos";
-          break;
-        case 401:
-          errorMessage = "Credenciales incorrectas";
           break;
         case 404:
           errorMessage = "Recurso no encontrado";

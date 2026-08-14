@@ -18,82 +18,48 @@ export default function Favorites() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuth();
-  const { refreshFavorites } = useFavorites();
+  const { favoriteIdsSet } = useFavorites();
 
   // Modales
   const [selectedCar, setSelectedCar] = useState(null);
   const [carToReserve, setCarToReserve] = useState(null);
   const [reservaConfirmada, setReservaConfirmada] = useState(null);
 
-  // Cargar favoritos
+  // Carga inicial de favoritos desde la API
   useEffect(() => {
     const loadFavorites = async () => {
-      // Solo cargar si hay usuario autenticado
       if (!user) {
         setError("Debes iniciar sesión para ver tus favoritos");
         setLoading(false);
         return;
       }
-
       try {
         setLoading(true);
         setError(null);
-        
-        console.log('Cargando favoritos para usuario:', user.email);
         const response = await getMyFavorites();
-        console.log('Respuesta de favoritos:', response);
-        
-        // Manejar diferentes formatos de respuesta
-        if (response && typeof response === 'object') {
-          // Si viene con estructura {success, data}
-          if (response.success === true) {
-            setFavoriteModels(response.data || []);
-          }
-          // Si viene directamente como array
-          else if (Array.isArray(response)) {
-            setFavoriteModels(response);
-          }
-          // Si viene con error
-          else if (response.success === false) {
-            setError(response.error || 'Error cargando favoritos');
-          }
-          else {
-            // Asumir que es un array o datos válidos
-            setFavoriteModels(Array.isArray(response) ? response : []);
-          }
+        if (Array.isArray(response)) {
+          setFavoriteModels(response);
+        } else if (response?.success) {
+          setFavoriteModels(response.data || []);
         } else {
           setFavoriteModels([]);
         }
       } catch (err) {
-        console.error('Error cargando favoritos:', err);
         setError(err.message || 'Error de conexión al cargar favoritos');
         setFavoriteModels([]);
       } finally {
         setLoading(false);
       }
     };
-
     loadFavorites();
-  }, [user]); // Agregar user como dependencia
+  }, [user]);
 
-  // Función para recargar favoritos (cuando se elimina uno)
-  const reloadFavorites = async () => {
-    if (!user) return;
-    
-    try {
-      // Actualizar tanto el estado local como el global
-      refreshFavorites();
-      
-      const response = await getMyFavorites();
-      if (response && response.success) {
-        setFavoriteModels(response.data || []);
-      } else if (Array.isArray(response)) {
-        setFavoriteModels(response);
-      }
-    } catch (err) {
-      console.error('Error recargando favoritos:', err);
+  // Sincronizar la grilla cuando el contexto quita un favorito
+  useEffect(() => {
+    if (!loading) {
+      setFavoriteModels(prev => prev.filter(m => favoriteIdsSet.has(m.carModelId)));
     }
-  };
+  }, [favoriteIdsSet]);
 
   // Confirmación de la reserva
   const handleConfirmReservation = ({ car, filters, dias, total }) => {
@@ -213,12 +179,6 @@ export default function Favorites() {
                     ? "Modelos disponibles para tus fechas"
                     : "Agrega fechas para verificar disponibilidad"}
                 </h2>
-                <button
-                  onClick={reloadFavorites}
-                  className="text-sm text-primary hover:text-primary-dark flex items-center gap-1"
-                >
-                  🔄 Actualizar
-                </button>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -272,7 +232,6 @@ export default function Favorites() {
                         }}
                         canReserve={Boolean(filters?.startDate && filters?.endDate && model.availableUnits > 0)}
                         showFavoriteButton={true}
-                        onFavoriteChange={reloadFavorites}
                       />
                     </div>
                   );

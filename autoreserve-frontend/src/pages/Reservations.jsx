@@ -40,6 +40,9 @@ export default function Reservations() {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
+
+  const toggleExpand = (id) => setExpandedId(prev => prev === id ? null : id);
 
   // Filtros
   const [search, setSearch] = useState("");
@@ -199,91 +202,107 @@ export default function Reservations() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white shadow rounded-lg overflow-x-auto">
-        <table className="w-full table-auto text-sm">
+      <div className="bg-white shadow rounded-lg overflow-hidden">
+
+        {/* Tarjetas móvil (< md) */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {sorted.map(r => (
+            <div key={r.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-gray-800">{r.carBrand} {r.carModel}</p>
+                  <p className="text-xs text-gray-500">{r.categoryName} · {r.carYear}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">#{r.id}</p>
+                </div>
+                <Pill value={r.status} config={STATUS_CONFIG} />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                <div><span className="font-medium">Retiro:</span> {r.startDate}</div>
+                <div><span className="font-medium">Entrega:</span> {r.endDate}</div>
+                <div><span className="font-medium">Sede retiro:</span> {r.pickupBranchName}</div>
+                <div><span className="font-medium">Sede entrega:</span> {r.dropoffBranchName}</div>
+                <div><span className="font-medium">Días:</span> {r.totalDays}</div>
+                <div><span className="font-medium">Total:</span> ${r.totalAmount?.toLocaleString()}</div>
+              </div>
+              <Pill value={r.paymentStatus} config={PAYMENT_CONFIG} />
+              <div className="flex gap-2 flex-wrap">
+                {r.status === "PENDING" && (
+                  <button onClick={() => navigate("/reservas/checkout", { state: { reservationData: { reservationId: r.id, carBrand: r.carBrand, carModel: r.carModel, startDate: r.startDate, endDate: r.endDate, pickupBranchName: r.pickupBranchName, dropoffBranchName: r.dropoffBranchName, estimatedTotal: r.totalAmount } } })}
+                    className="text-xs px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 transition">
+                    💳 Pagar
+                  </button>
+                )}
+                {(r.status === "PENDING" || r.status === "CONFIRMED") && (
+                  <button onClick={() => handleCancel(r)}
+                    className="text-xs px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition">
+                    Cancelar
+                  </button>
+                )}
+                <button onClick={() => navigate(`/reservas/${r.id}`)}
+                  className="text-xs px-3 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
+                  Ver
+                </button>
+              </div>
+            </div>
+          ))}
+          {sorted.length === 0 && (
+            <p className="text-center py-10 text-gray-500">
+              {hasFilters ? "No hay reservas con los filtros aplicados." : "No tienes reservas todavía."}
+            </p>
+          )}
+        </div>
+
+        {/* Tabla md+ con todas las columnas, compacta en tamaños intermedios */}
+        <table className="hidden md:table w-full text-xs lg:text-sm">
           <thead className="bg-gray-50 text-left border-b">
             <tr>
-              {[
-                { col: "id",            label: "ID" },
-                { col: "carBrand",      label: "Vehículo" },
-                { col: "startDate",     label: "Fechas" },
-                { col: "pickupBranchName", label: "Sedes" },
-                { col: "totalDays",     label: "Días" },
-                { col: "totalAmount",   label: "Total" },
-                { col: "status",        label: "Estado" },
-                { col: "paymentStatus", label: "Pago" },
-              ].map(({ col, label }) => (
-                <th
-                  key={col}
-                  onClick={() => handleSort(col)}
-                  className="px-4 py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap"
-                >
-                  {label}
-                  <SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
-                </th>
-              ))}
-              <th className="px-4 py-3 font-semibold text-gray-700 text-center">Acciones</th>
+              <th className="px-2 lg:px-4 py-2 lg:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("id")}>ID<SortIcon col="id" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 lg:px-4 py-2 lg:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("carBrand")}>Vehículo<SortIcon col="carBrand" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 lg:px-4 py-2 lg:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("startDate")}>Fechas<SortIcon col="startDate" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 lg:px-4 py-2 lg:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("pickupBranchName")}>Sedes<SortIcon col="pickupBranchName" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 lg:px-4 py-2 lg:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("totalDays")}>Días<SortIcon col="totalDays" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 lg:px-4 py-2 lg:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("totalAmount")}>Total<SortIcon col="totalAmount" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 lg:px-4 py-2 lg:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("status")}>Estado<SortIcon col="status" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 lg:px-4 py-2 lg:py-3 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap" onClick={() => handleSort("paymentStatus")}>Pago<SortIcon col="paymentStatus" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 lg:px-4 py-2 lg:py-3 font-semibold text-gray-700 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {sorted.map(r => (
               <tr key={r.id} className="border-t hover:bg-gray-50 transition">
-                <td className="px-4 py-3 font-medium text-gray-700">#{r.id}</td>
-                <td className="px-4 py-3">
-                  <p className="font-medium">{r.carBrand} {r.carModel}</p>
-                  <p className="text-xs text-gray-500">{r.categoryName} · {r.carYear}</p>
+                <td className="px-2 lg:px-4 py-2 lg:py-3 font-medium text-gray-700">#{r.id}</td>
+                <td className="px-2 lg:px-4 py-2 lg:py-3">
+                  <p className="font-medium leading-tight">{r.carBrand} {r.carModel}</p>
+                  <p className="text-gray-500 leading-tight">{r.categoryName} · {r.carYear}</p>
                 </td>
-                <td className="px-4 py-3 text-xs">
-                  <p><span className="font-medium">Retiro:</span> {r.startDate}</p>
-                  <p><span className="font-medium">Entrega:</span> {r.endDate}</p>
+                <td className="px-2 lg:px-4 py-2 lg:py-3">
+                  <p><span className="font-medium">↑</span> {r.startDate}</p>
+                  <p><span className="font-medium">↓</span> {r.endDate}</p>
                 </td>
-                <td className="px-4 py-3 text-xs">
-                  <p><span className="font-medium">↑</span> {r.pickupBranchName}</p>
-                  <p><span className="font-medium">↓</span> {r.dropoffBranchName}</p>
+                <td className="px-2 lg:px-4 py-2 lg:py-3">
+                  <p className="leading-tight">{r.pickupBranchName}</p>
+                  <p className="leading-tight">{r.dropoffBranchName}</p>
                 </td>
-                <td className="px-4 py-3 text-center">{r.totalDays}</td>
-                <td className="px-4 py-3 font-medium">${r.totalAmount?.toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  <Pill value={r.status} config={STATUS_CONFIG} />
-                </td>
-                <td className="px-4 py-3">
-                  <Pill value={r.paymentStatus} config={PAYMENT_CONFIG} />
-                </td>
-                <td className="px-4 py-3">
+                <td className="px-2 lg:px-4 py-2 lg:py-3 text-center">{r.totalDays}</td>
+                <td className="px-2 lg:px-4 py-2 lg:py-3 font-medium">${r.totalAmount?.toLocaleString()}</td>
+                <td className="px-2 lg:px-4 py-2 lg:py-3"><Pill value={r.status} config={STATUS_CONFIG} /></td>
+                <td className="px-2 lg:px-4 py-2 lg:py-3"><Pill value={r.paymentStatus} config={PAYMENT_CONFIG} /></td>
+                <td className="px-2 lg:px-4 py-2 lg:py-3">
                   <div className="flex gap-1 justify-center flex-wrap">
                     {r.status === "PENDING" && (
-                      <button
-                        onClick={() => navigate("/reservas/checkout", {
-                          state: {
-                            reservationData: {
-                              reservationId: r.id,
-                              carBrand: r.carBrand,
-                              carModel: r.carModel,
-                              startDate: r.startDate,
-                              endDate: r.endDate,
-                              pickupBranchName: r.pickupBranchName,
-                              dropoffBranchName: r.dropoffBranchName,
-                              estimatedTotal: r.totalAmount,
-                            },
-                          },
-                        })}
-                        className="text-xs px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 transition"
-                      >
+                      <button onClick={() => navigate("/reservas/checkout", { state: { reservationData: { reservationId: r.id, carBrand: r.carBrand, carModel: r.carModel, startDate: r.startDate, endDate: r.endDate, pickupBranchName: r.pickupBranchName, dropoffBranchName: r.dropoffBranchName, estimatedTotal: r.totalAmount } } })}
+                        className="px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 transition">
                         💳 Pagar
                       </button>
                     )}
                     {(r.status === "PENDING" || r.status === "CONFIRMED") && (
-                      <button
-                        onClick={() => handleCancel(r)}
-                        className="text-xs px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                      >
+                      <button onClick={() => handleCancel(r)}
+                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition">
                         Cancelar
                       </button>
                     )}
-                    <button
-                      onClick={() => navigate(`/reservas/${r.id}`)}
-                      className="text-xs px-2 py-1 bg-primary text-white rounded hover:bg-primary-dark transition"
-                    >
+                    <button onClick={() => navigate(`/reservas/${r.id}`)}
+                      className="px-2 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
                       Ver
                     </button>
                   </div>

@@ -1,8 +1,9 @@
 // Gestor de mensajes de soporte para el administrador
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAdminTickets, getAdminTicketDetail, adminReply, adminCloseTicket, adminStartConversation } from "../api/contactApi";
+import { getAdminTicketDetail, adminReply, adminCloseTicket, adminStartConversation } from "../api/contactApi";
 import { getUsers } from "../api/adminUsersApi";
+import { useMessages } from "../contexts/MessagesContext";
 
 const normalize = (str) =>
   String(str ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -239,7 +240,15 @@ function TicketThread({ ticketId, onClose }) {
         <div ref={bottomRef} />
       </div>
 
-      {!isClosed ? (
+      {isClosed ? (
+        <div className="px-6 py-3 border-t bg-gray-50 text-center text-sm text-gray-500">
+          Este ticket está cerrado.
+        </div>
+      ) : ticket.userId === null ? (
+        <div className="px-6 py-3 border-t bg-yellow-50 text-center text-sm text-yellow-700">
+          ⚠️ Este mensaje fue enviado por un usuario anónimo. La respuesta no puede ser entregada al remitente.
+        </div>
+      ) : (
         <div className="px-6 py-4 border-t bg-gray-50">
           <div className="flex gap-3">
             <textarea value={reply} onChange={e => setReply(e.target.value)}
@@ -253,10 +262,6 @@ function TicketThread({ ticketId, onClose }) {
             </button>
           </div>
         </div>
-      ) : (
-        <div className="px-6 py-3 border-t bg-gray-50 text-center text-sm text-gray-500">
-          Este ticket está cerrado.
-        </div>
       )}
     </div>
   );
@@ -264,8 +269,7 @@ function TicketThread({ ticketId, onClose }) {
 
 export default function AdminMessages() {
   const navigate = useNavigate();
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { tickets, loading, refresh } = useMessages();
   const [selectedId, setSelectedId] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
 
@@ -275,13 +279,9 @@ export default function AdminMessages() {
   const [sortCol, setSortCol] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
 
-  const loadTickets = () =>
-    getAdminTickets()
-      .then(setTickets)
-      .catch(err => alert("Error: " + err.message))
-      .finally(() => setLoading(false));
+  const loadTickets = () => refresh();
 
-  useEffect(() => { loadTickets(); }, []);
+  useEffect(() => { refresh(); }, []);
 
   const handleSort = (col) => {
     if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -370,20 +370,37 @@ export default function AdminMessages() {
           <table className="w-full table-auto text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
-                {[
-                  { col: "id",         label: "ID" },
-                  { col: "senderName", label: "Remitente" },
-                  { col: "subject",    label: "Asunto" },
-                  { col: "type",       label: "Tipo" },
-                  { col: "status",     label: "Estado" },
-                  { col: "createdAt",  label: "Fecha" },
-                ].map(({ col, label }) => (
-                  <th key={col} onClick={() => handleSort(col)}
+                {!selectedId && (
+                  <th onClick={() => handleSort("id")}
                     className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
-                    {label}<SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
+                    ID<SortIcon col="id" sortCol={sortCol} sortDir={sortDir} />
                   </th>
-                ))}
-                <th className="px-4 py-3 text-center font-semibold text-gray-700">Acción</th>
+                )}
+                <th onClick={() => handleSort("senderName")}
+                  className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
+                  Remitente<SortIcon col="senderName" sortCol={sortCol} sortDir={sortDir} />
+                </th>
+                <th onClick={() => handleSort("subject")}
+                  className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
+                  Asunto<SortIcon col="subject" sortCol={sortCol} sortDir={sortDir} />
+                </th>
+                {!selectedId && (
+                  <th onClick={() => handleSort("type")}
+                    className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
+                    Tipo<SortIcon col="type" sortCol={sortCol} sortDir={sortDir} />
+                  </th>
+                )}
+                <th onClick={() => handleSort("status")}
+                  className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
+                  Estado<SortIcon col="status" sortCol={sortCol} sortDir={sortDir} />
+                </th>
+                {!selectedId && (
+                  <th onClick={() => handleSort("createdAt")}
+                    className="px-4 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
+                    Fecha<SortIcon col="createdAt" sortCol={sortCol} sortDir={sortDir} />
+                  </th>
+                )}
+                {!selectedId && <th className="px-4 py-3 text-center font-semibold text-gray-700">Acción</th>}
               </tr>
             </thead>
             <tbody>
@@ -391,30 +408,38 @@ export default function AdminMessages() {
                 <tr key={t.id}
                   className={`border-t hover:bg-gray-50 transition cursor-pointer ${selectedId === t.id ? "bg-blue-50" : ""} ${t.status === "OPEN" ? "font-semibold" : ""}`}
                   onClick={() => setSelectedId(t.id)}>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">#{t.id}</td>
+                  {!selectedId && (
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500">#{t.id}</td>
+                  )}
                   <td className="px-4 py-3">
-                    <p className="text-gray-800">{t.senderName}</p>
-                    <p className="text-xs text-gray-400">{t.senderEmail}</p>
+                    <p className="text-gray-800 truncate max-w-[120px]">{t.senderName}</p>
+                    {!selectedId && <p className="text-xs text-gray-400">{t.senderEmail}</p>}
                   </td>
-                  <td className="px-4 py-3 text-sm max-w-[180px] truncate">{t.subject}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs font-medium ${TYPE_CONFIG[t.type]?.color || "text-gray-600"}`}>
-                      {TYPE_CONFIG[t.type]?.label || t.type}
-                    </span>
-                  </td>
+                  <td className={`px-4 py-3 text-sm truncate ${selectedId ? "max-w-[140px]" : "max-w-[180px]"}`}>{t.subject}</td>
+                  {!selectedId && (
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-medium ${TYPE_CONFIG[t.type]?.color || "text-gray-600"}`}>
+                        {TYPE_CONFIG[t.type]?.label || t.type}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-4 py-3"><StatusPill status={t.status} /></td>
-                  <td className="px-4 py-3 text-xs text-gray-500">{new Date(t.createdAt).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-center">
-                    <button onClick={e => { e.stopPropagation(); setSelectedId(t.id); }}
-                      className="text-xs px-3 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
-                      Ver hilo
-                    </button>
-                  </td>
+                  {!selectedId && (
+                    <td className="px-4 py-3 text-xs text-gray-500">{new Date(t.createdAt).toLocaleDateString()}</td>
+                  )}
+                  {!selectedId && (
+                    <td className="px-4 py-3 text-center">
+                      <button onClick={e => { e.stopPropagation(); setSelectedId(t.id); }}
+                        className="text-xs px-3 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
+                        Ver hilo
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="text-center py-10 text-gray-500">
+                  <td colSpan={selectedId ? 3 : 7} className="text-center py-10 text-gray-500">
                     {hasFilters ? "No hay mensajes con los filtros aplicados." : "No hay mensajes registrados."}
                   </td>
                 </tr>
