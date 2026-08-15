@@ -258,6 +258,11 @@ export default function Policies() {
                 description="Procedimientos de migración de datos, estrategia de respaldo y recuperación ante fallos."
                 file="Plan de Migración y Respaldo de Datos del Software.pdf"
               />
+              <DocCard
+                title="Plan de Instalación"
+                description="Paso a paso para la instalación del software en entornos de producción y pruebas."
+                file="Plan de Instalación.pdf"
+              />
             </>
           )}
         </div>
