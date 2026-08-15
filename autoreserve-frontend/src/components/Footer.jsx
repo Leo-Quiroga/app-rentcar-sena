@@ -24,7 +24,7 @@ export default function Footer() {
 
         {/* Links secundarios */}
         <nav aria-label="Enlaces secundarios" className="flex flex-wrap justify-center gap-6 text-sm">
-          <Link to="/politicas" className="hover:text-secondary transition">Políticas</Link>
+          <Link to="/politicas" className="hover:text-secondary transition">Políticas y Recursos</Link>
           <Link to="/contacto" className="hover:text-secondary transition">Contacto y FAQ</Link>
           {isLoggedIn && (
             <Link
