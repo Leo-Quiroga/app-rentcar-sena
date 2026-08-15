@@ -32,7 +32,114 @@ function SortIcon({ col, sortCol, sortDir }) {
   return <span className="ml-1">{sortDir === "asc" ? "↑" : "↓"}</span>;
 }
 
-// ── Fila de unidad individual (editable) ──────────────────────────────────────
+// ── Tarjeta de unidad para móvil ─────────────────────────────────────────────
+function UnitCard({ unit, branches, onSave, onDelete }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    plate: unit.plate || "",
+    color: unit.color || "",
+    status: unit.status || "PENDING_REGISTRATION",
+    branchId: unit.branchId ? String(unit.branchId) : "",
+    notes: unit.notes || "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSave = async () => {
+    setError("");
+    setSaving(true);
+    try {
+      await onSave(unit.id, form);
+      setEditing(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (editing) {
+    return (
+      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Placa</label>
+            <input value={form.plate} onChange={e => setForm({ ...form, plate: e.target.value })}
+              placeholder="Placa" className="border rounded px-2 py-1 text-xs w-full" />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Color</label>
+            <input value={form.color} onChange={e => setForm({ ...form, color: e.target.value })}
+              placeholder="Color" className="border rounded px-2 py-1 text-xs w-full" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Estado</label>
+          <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
+            className="border rounded px-2 py-1 text-xs w-full">
+            {Object.entries(STATUS_LABEL).map(([k, v]) => (
+              <option key={k} value={k}>{v.text}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Sede</label>
+          <select value={form.branchId} onChange={e => setForm({ ...form, branchId: e.target.value })}
+            className="border rounded px-2 py-1 text-xs w-full">
+            <option value="">Selecciona sede</option>
+            {branches.map(b => (
+              <option key={b.id} value={String(b.id)}>{b.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Notas</label>
+          <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
+            placeholder="Notas" className="border rounded px-2 py-1 text-xs w-full" />
+        </div>
+        {error && <p className="text-red-500 text-xs">{error}</p>}
+        <div className="flex gap-2">
+          <button onClick={handleSave} disabled={saving}
+            className="text-xs px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50">
+            {saving ? "..." : "Guardar"}
+          </button>
+          <button onClick={() => { setEditing(false); setError(""); }}
+            className="text-xs px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 bg-white border border-gray-200 rounded-lg space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-xs font-mono font-semibold text-gray-800">{unit.plate || <span className="text-gray-400 italic">Sin placa</span>}</p>
+          <p className="text-xs text-gray-500">{unit.color || <span className="text-gray-400 italic">Sin color</span>}</p>
+        </div>
+        <StatusPill status={unit.status} />
+      </div>
+      <div className="grid grid-cols-2 gap-1 text-xs text-gray-600">
+        <div><span className="font-medium">Sede:</span> {unit.branchName || "—"}</div>
+        <div><span className="font-medium">Notas:</span> {unit.notes || "—"}</div>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => setEditing(true)}
+          className="text-xs px-2 py-1 text-yellow-600 border border-yellow-200 rounded hover:bg-yellow-50">
+          ✏️ Editar
+        </button>
+        <button onClick={() => onDelete(unit.id)}
+          className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50">
+          🗑️ Eliminar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Fila de unidad individual (editable, solo desktop) ────────────────────────
 function UnitRow({ unit, branches, onSave, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
@@ -127,6 +234,151 @@ function UnitRow({ unit, branches, onSave, onDelete }) {
         </div>
       </td>
     </tr>
+  );
+}
+
+// ── Panel de unidades para móvil (div, no tr) ───────────────────────────────
+function UnitsPanelMobile({ modelId, modelName, branches, onClose }) {
+  const [units, setUnits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addQty, setAddQty] = useState(1);
+  const [addBranchId, setAddBranchId] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const load = () =>
+    getUnitsByModel(modelId)
+      .then(setUnits)
+      .catch(err => alert("Error: " + err.message))
+      .finally(() => setLoading(false));
+
+  useEffect(() => { load(); }, [modelId]);
+
+  const handleSaveUnit = async (unitId, form) => {
+    await updateCarUnit(unitId, form);
+    await load();
+  };
+
+  const handleDeleteUnit = async (unitId) => {
+    if (!window.confirm("¿Eliminar esta unidad?")) return;
+    await deleteCarUnit(unitId);
+    setUnits(prev => prev.filter(u => u.id !== unitId));
+  };
+
+  const handleAddUnits = async () => {
+    if (!addBranchId) { alert("Selecciona una sede para las nuevas unidades."); return; }
+    setAdding(true);
+    try {
+      const { apiFetch } = await import("../api/http.js");
+      for (let i = 0; i < addQty; i++) {
+        await apiFetch(`/api/admin/cars/models/${modelId}/units`, {
+          method: "POST",
+          body: JSON.stringify({ branchId: parseInt(addBranchId) }),
+        });
+      }
+      await load();
+      setShowAddForm(false);
+      setAddQty(1);
+      setAddBranchId("");
+    } catch (err) {
+      alert("Error agregando unidades: " + err.message);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const filtered = units.filter(u => {
+    const term = normalize(search);
+    const matchSearch = !search ||
+      normalize(u.plate).includes(term) ||
+      normalize(u.color).includes(term) ||
+      normalize(u.branchName).includes(term) ||
+      normalize(STATUS_LABEL[u.status]?.text).includes(term);
+    const matchStatus = !filterStatus || u.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Unidades — {modelName}</p>
+        <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600">▲ Ocultar</button>
+      </div>
+
+      <div className="flex flex-col gap-2 mb-3">
+        <input type="text" placeholder="Buscar placa, color, sede, estado..."
+          value={search} onChange={e => setSearch(e.target.value)}
+          className="border border-gray-300 rounded px-2 py-1 text-xs w-full focus:ring-primary focus:border-primary" />
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+          className="border border-gray-300 rounded px-2 py-1 text-xs focus:ring-primary focus:border-primary">
+          <option value="">Todos los estados</option>
+          {Object.entries(STATUS_LABEL).map(([k, v]) => (
+            <option key={k} value={k}>{v.text}</option>
+          ))}
+        </select>
+        {(search || filterStatus) && (
+          <button onClick={() => { setSearch(""); setFilterStatus(""); }}
+            className="text-xs text-gray-400 hover:text-red-500 underline text-left">Limpiar</button>
+        )}
+      </div>
+
+      {loading ? (
+        <p className="text-xs text-gray-400">Cargando unidades...</p>
+      ) : (
+        <>
+          {filtered.length === 0 ? (
+            <p className="text-xs text-gray-400 italic">
+              {search || filterStatus ? "No hay unidades con esos filtros." : "No hay unidades registradas."}
+            </p>
+          ) : (
+            <div className="space-y-2 mb-3">
+              {filtered.map(unit => (
+                <UnitCard key={unit.id} unit={unit} branches={branches}
+                  onSave={handleSaveUnit} onDelete={handleDeleteUnit} />
+              ))}
+            </div>
+          )}
+
+          {!showAddForm ? (
+            <button onClick={() => setShowAddForm(true)}
+              className="text-xs px-3 py-1 border border-dashed border-gray-400 text-gray-500 rounded hover:border-primary hover:text-primary transition">
+              + Agregar unidades
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2 mt-2 p-3 bg-white border border-gray-200 rounded">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Cantidad</label>
+                <input type="number" min="1" max="20" value={addQty}
+                  onChange={e => setAddQty(parseInt(e.target.value) || 1)}
+                  className="border rounded px-2 py-1 text-xs w-20" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Sede *</label>
+                <select value={addBranchId} onChange={e => setAddBranchId(e.target.value)}
+                  className="border rounded px-2 py-1 text-xs w-full">
+                  <option value="">Selecciona sede</option>
+                  {branches.map(b => (
+                    <option key={b.id} value={String(b.id)}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleAddUnits} disabled={adding}
+                  className="text-xs px-3 py-1 bg-primary text-white rounded hover:bg-primary-dark disabled:opacity-50">
+                  {adding ? "..." : "Agregar"}
+                </button>
+                <button onClick={() => setShowAddForm(false)}
+                  className="text-xs px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -249,31 +501,42 @@ function UnitsPanel({ modelId, modelName, branches, onClose }) {
                   {search || filterStatus ? "No hay unidades con esos filtros." : "No hay unidades registradas."}
                 </p>
               ) : (
-                <table className="w-full text-sm mb-3">
-                  <thead>
-                    <tr className="text-xs text-gray-500 border-b">
-                      {[
-                        { col: "plate",      label: "Placa" },
-                        { col: "color",      label: "Color" },
-                        { col: "status",     label: "Estado" },
-                        { col: "notes",      label: "Notas" },
-                        { col: "branchName", label: "Sede" },
-                      ].map(({ col, label }) => (
-                        <th key={col} onClick={() => handleSort(col)}
-                          className="px-3 py-1 text-left cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
-                          {label}<SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
-                        </th>
-                      ))}
-                      <th className="px-3 py-1 text-left">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <>
+                  {/* Tarjetas móvil */}
+                  <div className="md:hidden space-y-2 mb-3">
                     {sorted.map(unit => (
-                      <UnitRow key={unit.id} unit={unit} branches={branches}
+                      <UnitCard key={unit.id} unit={unit} branches={branches}
                         onSave={handleSaveUnit} onDelete={handleDeleteUnit} />
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+
+                  {/* Tabla desktop */}
+                  <table className="hidden md:table w-full text-sm mb-3">
+                    <thead>
+                      <tr className="text-xs text-gray-500 border-b">
+                        {[
+                          { col: "plate",      label: "Placa" },
+                          { col: "color",      label: "Color" },
+                          { col: "status",     label: "Estado" },
+                          { col: "notes",      label: "Notas" },
+                          { col: "branchName", label: "Sede" },
+                        ].map(({ col, label }) => (
+                          <th key={col} onClick={() => handleSort(col)}
+                            className="px-3 py-1 text-left cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">
+                            {label}<SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
+                          </th>
+                        ))}
+                        <th className="px-3 py-1 text-left">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sorted.map(unit => (
+                        <UnitRow key={unit.id} unit={unit} branches={branches}
+                          onSave={handleSaveUnit} onDelete={handleDeleteUnit} />
+                      ))}
+                    </tbody>
+                  </table>
+                </>
               )}
 
               {/* Agregar unidades */}
@@ -317,6 +580,53 @@ function UnitsPanel({ modelId, modelName, branches, onClose }) {
         </div>
       </td>
     </tr>
+  );
+}
+
+// ── Tarjeta de modelo para móvil ─────────────────────────────────────────────
+function ModelCard({ model, branches, onDelete, navigate }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="font-semibold text-gray-800">{model.brand} {model.model}</p>
+          <p className="text-xs text-gray-500">{model.categoryName} · {model.year}</p>
+        </div>
+        <p className="text-sm font-medium text-gray-700 whitespace-nowrap">${model.pricePerDay?.toLocaleString()}/día</p>
+      </div>
+      <div className="text-xs text-gray-600">
+        <span className="font-medium">Disponibilidad: </span>
+        <span className="text-green-600 font-semibold">{model.availableUnits}</span>
+        <span className="text-gray-400"> / {model.totalUnits}</span>
+        <span className="text-gray-400 ml-1">disponibles</span>
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        <button onClick={() => setExpanded(e => !e)}
+          className="text-xs px-2 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100">
+          {expanded ? "▲ Ocultar" : "▼ Ver unidades"}
+        </button>
+        <button onClick={() => navigate(`/admin/autos/editar/${model.id}`)}
+          className="text-xs px-2 py-1 text-yellow-600 border border-yellow-200 rounded hover:bg-yellow-50">
+          ✏️ Editar
+        </button>
+        <button onClick={() => onDelete(model.id, `${model.brand} ${model.model}`)}
+          className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50">
+          🗑️ Eliminar
+        </button>
+      </div>
+      {expanded && (
+        <div className="mt-2 bg-gray-50 rounded-lg border border-gray-200">
+          <UnitsPanelMobile
+            modelId={model.id}
+            modelName={`${model.brand} ${model.model}`}
+            branches={branches}
+            onClose={() => setExpanded(false)}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -467,8 +777,23 @@ export default function AdminAutos() {
             className="border border-gray-300 rounded px-3 py-2 text-sm w-full max-w-md focus:ring-primary focus:border-primary" />
         </div>
 
-        <div className="bg-white shadow rounded-lg overflow-x-auto">
-          <table className="w-full table-auto text-sm">
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+
+          {/* Tarjetas móvil (< md) */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {sorted.map(model => (
+              <ModelCard key={model.id} model={model} branches={branches}
+                onDelete={handleDeleteModel} navigate={navigate} />
+            ))}
+            {sorted.length === 0 && (
+              <p className="text-center py-10 text-gray-500">
+                {search ? "No se encontraron modelos." : "No hay modelos registrados."}
+              </p>
+            )}
+          </div>
+
+          {/* Tabla desktop (≥ md) */}
+          <table className="hidden md:table w-full table-auto text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
                 {[

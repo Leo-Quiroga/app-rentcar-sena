@@ -365,9 +365,124 @@ export default function AdminMessages() {
       </div>
 
       <div className={`grid gap-6 ${selectedId ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
-        {/* Tabla */}
-        <div className="bg-white shadow rounded-lg overflow-x-auto">
-          <table className="w-full table-auto text-sm">
+        {/* Lista de tickets */}
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+
+          {/* Tarjetas móvil (< 640px) */}
+          <div className="sm:hidden divide-y divide-gray-100">
+            {sorted.map(t => (
+              <div key={t.id}
+                className={`p-4 space-y-2 cursor-pointer ${selectedId === t.id ? "bg-blue-50" : "hover:bg-gray-50"} ${t.status === "OPEN" ? "font-semibold" : ""}`}
+                onClick={() => setSelectedId(t.id)}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-gray-800 text-sm truncate">{t.senderName}</p>
+                    <p className="text-xs text-gray-400 truncate">{t.senderEmail}</p>
+                    <p className="text-xs text-gray-400">#{t.id} · {new Date(t.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <StatusPill status={t.status} />
+                </div>
+                <p className="text-xs text-gray-700 truncate">{t.subject}</p>
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-medium ${TYPE_CONFIG[t.type]?.color || "text-gray-600"}`}>
+                    {TYPE_CONFIG[t.type]?.label || t.type}
+                  </span>
+                  <button onClick={e => { e.stopPropagation(); setSelectedId(t.id); }}
+                    className="text-xs px-3 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
+                    Ver hilo
+                  </button>
+                </div>
+              </div>
+            ))}
+            {sorted.length === 0 && (
+              <p className="text-center py-10 text-gray-500">
+                {hasFilters ? "No hay mensajes con los filtros aplicados." : "No hay mensajes registrados."}
+              </p>
+            )}
+          </div>
+
+          {/* Tabla 640–768px */}
+          <table className="hidden sm:table md:hidden w-full table-auto text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th onClick={() => handleSort("senderName")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Remitente<SortIcon col="senderName" sortCol={sortCol} sortDir={sortDir} /></th>
+                <th onClick={() => handleSort("subject")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Asunto<SortIcon col="subject" sortCol={sortCol} sortDir={sortDir} /></th>
+                <th onClick={() => handleSort("status")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Estado<SortIcon col="status" sortCol={sortCol} sortDir={sortDir} /></th>
+                <th className="px-3 py-3 text-center font-semibold text-gray-700" style={{width:"80px"}}>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map(t => (
+                <tr key={t.id}
+                  className={`border-t hover:bg-gray-50 transition cursor-pointer ${selectedId === t.id ? "bg-blue-50" : ""} ${t.status === "OPEN" ? "font-semibold" : ""}`}
+                  onClick={() => setSelectedId(t.id)}>
+                  <td className="px-3 py-3">
+                    <p className="text-gray-800 text-xs truncate max-w-[120px]">{t.senderName}</p>
+                    <p className="text-xs text-gray-400">#{t.id} · {new Date(t.createdAt).toLocaleDateString()}</p>
+                  </td>
+                  <td className="px-3 py-3 text-xs text-gray-700 truncate max-w-[150px]">{t.subject}</td>
+                  <td className="px-3 py-3"><StatusPill status={t.status} /></td>
+                  <td className="px-3 py-3 text-center" style={{width:"80px"}}>
+                    <button onClick={e => { e.stopPropagation(); setSelectedId(t.id); }}
+                      className="text-xs px-2 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
+                      Ver hilo
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {sorted.length === 0 && (
+                <tr><td colSpan="4" className="text-center py-10 text-gray-500">{hasFilters ? "No hay mensajes con los filtros aplicados." : "No hay mensajes registrados."}</td></tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Tabla 768–1024px */}
+          <table className="hidden md:table lg:hidden w-full table-auto text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th onClick={() => handleSort("id")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">ID<SortIcon col="id" sortCol={sortCol} sortDir={sortDir} /></th>
+                <th onClick={() => handleSort("senderName")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Remitente<SortIcon col="senderName" sortCol={sortCol} sortDir={sortDir} /></th>
+                <th onClick={() => handleSort("subject")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Asunto<SortIcon col="subject" sortCol={sortCol} sortDir={sortDir} /></th>
+                <th onClick={() => handleSort("type")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Tipo<SortIcon col="type" sortCol={sortCol} sortDir={sortDir} /></th>
+                <th onClick={() => handleSort("status")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Estado<SortIcon col="status" sortCol={sortCol} sortDir={sortDir} /></th>
+                <th onClick={() => handleSort("createdAt")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Fecha<SortIcon col="createdAt" sortCol={sortCol} sortDir={sortDir} /></th>
+                <th className="px-3 py-3 text-center font-semibold text-gray-700" style={{width:"90px"}}>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map(t => (
+                <tr key={t.id}
+                  className={`border-t hover:bg-gray-50 transition cursor-pointer ${selectedId === t.id ? "bg-blue-50" : ""} ${t.status === "OPEN" ? "font-semibold" : ""}`}
+                  onClick={() => setSelectedId(t.id)}>
+                  <td className="px-3 py-3 font-mono text-xs text-gray-500">#{t.id}</td>
+                  <td className="px-3 py-3">
+                    <p className="text-gray-800 text-xs truncate max-w-[130px]">{t.senderName}</p>
+                    <p className="text-xs text-gray-400 truncate max-w-[130px]">{t.senderEmail}</p>
+                  </td>
+                  <td className="px-3 py-3 text-xs text-gray-700 truncate max-w-[160px]">{t.subject}</td>
+                  <td className="px-3 py-3">
+                    <span className={`text-xs font-medium ${TYPE_CONFIG[t.type]?.color || "text-gray-600"}`}>
+                      {TYPE_CONFIG[t.type]?.label || t.type}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3"><StatusPill status={t.status} /></td>
+                  <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">{new Date(t.createdAt).toLocaleDateString()}</td>
+                  <td className="px-3 py-3 text-center" style={{width:"90px"}}>
+                    <button onClick={e => { e.stopPropagation(); setSelectedId(t.id); }}
+                      className="text-xs px-2 py-1 bg-primary text-white rounded hover:bg-primary-dark transition">
+                      Ver hilo
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {sorted.length === 0 && (
+                <tr><td colSpan="7" className="text-center py-10 text-gray-500">{hasFilters ? "No hay mensajes con los filtros aplicados." : "No hay mensajes registrados."}</td></tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Tabla desktop (≥ 1024px): comportamiento original con panel lateral */}
+          <table className="hidden lg:table w-full table-auto text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
                 {!selectedId && (

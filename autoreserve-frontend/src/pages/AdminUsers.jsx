@@ -128,9 +128,213 @@ export default function AdminUsers() {
         )}
       </div>
 
-      {/* Tabla */}
-      <div className="bg-white shadow rounded-lg overflow-x-auto">
-        <table className="w-full table-auto text-sm">
+      {/* Tabla / Tarjetas */}
+      <div className="bg-white shadow rounded-lg overflow-hidden">
+
+        {/* 0–338px: tarjeta simple, todo apilado */}
+        <div className="[display:block] min-[338px]:hidden divide-y divide-gray-100">
+          {sorted.map(user => (
+            <div key={user.id} className="p-3 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">{user.firstName} {user.lastName}</p>
+                  <p className="text-xs text-gray-500 break-all">{user.email}</p>
+                  <p className="text-xs text-gray-400">#{user.id}</p>
+                </div>
+                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 ${
+                  user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"
+                }`}>
+                  {user.role === "ADMIN" ? "Admin" : "Cliente"}
+                </span>
+              </div>
+              <div className="text-xs text-gray-600 space-y-0.5">
+                <div><span className="font-medium">Tel:</span> {user.phone || "—"}</div>
+                <div><span className="font-medium">Registro:</span> {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}</div>
+              </div>
+              <div className="flex justify-center gap-2">
+                <button onClick={() => navigate(`/admin/usuarios/${user.id}/editar`)}
+                  className="text-xs px-3 py-1 border border-primary text-primary rounded hover:bg-primary hover:text-white transition">
+                  Editar
+                </button>
+                <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)}
+                  className="text-xs px-3 py-1 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+          {sorted.length === 0 && <p className="text-center py-10 text-gray-500">{hasFilters ? "No hay usuarios con los filtros aplicados." : "No hay usuarios registrados."}</p>}
+        </div>
+
+        {/* 338–490px: tarjeta con teléfono y registro alineados a la derecha junto al rol, botones centrados */}
+        <div className="hidden min-[338px]:block min-[490px]:hidden divide-y divide-gray-100">
+          {sorted.map(user => (
+            <div key={user.id} className="p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-900 text-sm">{user.firstName} {user.lastName}</p>
+                  <p className="text-xs text-gray-500 break-all">{user.email}</p>
+                  <p className="text-xs text-gray-400">#{user.id}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"
+                  }`}>
+                    {user.role === "ADMIN" ? "Admin" : "Cliente"}
+                  </span>
+                  <p className="text-xs text-gray-500">{user.phone || "—"}</p>
+                  <p className="text-xs text-gray-400">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}</p>
+                </div>
+              </div>
+              <div className="flex justify-center gap-2">
+                <button onClick={() => navigate(`/admin/usuarios/${user.id}/editar`)}
+                  className="text-xs px-3 py-1 border border-primary text-primary rounded hover:bg-primary hover:text-white transition">
+                  Editar
+                </button>
+                <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)}
+                  className="text-xs px-3 py-1 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+          {sorted.length === 0 && <p className="text-center py-10 text-gray-500">{hasFilters ? "No hay usuarios con los filtros aplicados." : "No hay usuarios registrados."}</p>}
+        </div>
+
+        {/* 490–640px: igual que 338–490 */}
+        <div className="hidden min-[490px]:block sm:hidden divide-y divide-gray-100">
+          {sorted.map(user => (
+            <div key={user.id} className="p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-900 text-sm">{user.firstName} {user.lastName}</p>
+                  <p className="text-xs text-gray-500 break-all">{user.email}</p>
+                  <p className="text-xs text-gray-400">#{user.id}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"
+                  }`}>
+                    {user.role === "ADMIN" ? "Admin" : "Cliente"}
+                  </span>
+                  <p className="text-xs text-gray-500">{user.phone || "—"}</p>
+                  <p className="text-xs text-gray-400">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}</p>
+                </div>
+              </div>
+              <div className="flex justify-center gap-2">
+                <button onClick={() => navigate(`/admin/usuarios/${user.id}/editar`)}
+                  className="text-xs px-3 py-1 border border-primary text-primary rounded hover:bg-primary hover:text-white transition">
+                  Editar
+                </button>
+                <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)}
+                  className="text-xs px-3 py-1 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+          {sorted.length === 0 && <p className="text-center py-10 text-gray-500">{hasFilters ? "No hay usuarios con los filtros aplicados." : "No hay usuarios registrados."}</p>}
+        </div>
+
+        {/* 640–768px: tabla con ID, Nombre+tel, Email, Rol, Registro, Acciones (botones apilados) */}
+        <table className="hidden sm:table md:hidden w-full table-auto text-sm">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th onClick={() => handleSort("id")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">ID<SortIcon col="id" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th onClick={() => handleSort("lastName")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Nombre<SortIcon col="lastName" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th onClick={() => handleSort("email")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Email<SortIcon col="email" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th onClick={() => handleSort("role")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Rol<SortIcon col="role" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th onClick={() => handleSort("createdAt")} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Registro<SortIcon col="createdAt" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-3 py-3 text-center font-semibold text-gray-700 w-20">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map(user => (
+              <tr key={user.id} className="border-t hover:bg-gray-50 transition">
+                <td className="px-3 py-3 text-xs font-mono text-gray-500">#{user.id}</td>
+                <td className="px-3 py-3">
+                  <p className="font-medium text-gray-900 text-xs">{user.firstName} {user.lastName}</p>
+                  <p className="text-xs text-gray-400">{user.phone || "—"}</p>
+                </td>
+                <td className="px-3 py-3 text-xs text-gray-600 break-all">{user.email}</td>
+                <td className="px-3 py-3">
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"
+                  }`}>
+                    {user.role === "ADMIN" ? "Admin" : "Cliente"}
+                  </span>
+                </td>
+                <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}</td>
+                <td className="px-3 py-3 w-20">
+                  <div className="flex flex-col gap-1 items-stretch">
+                    <button onClick={() => navigate(`/admin/usuarios/${user.id}/editar`)}
+                      className="text-xs px-2 py-1 border border-primary text-primary rounded hover:bg-primary hover:text-white transition text-center">
+                      Editar
+                    </button>
+                    <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)}
+                      className="text-xs px-2 py-1 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition text-center">
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {sorted.length === 0 && (
+              <tr><td colSpan="6" className="text-center py-10 text-gray-500">{hasFilters ? "No hay usuarios con los filtros aplicados." : "No hay usuarios registrados."}</td></tr>
+            )}
+          </tbody>
+        </table>
+
+        {/* 768–1024px: tabla con todas las columnas, botones apilados con ancho fijo en acciones */}
+        <table className="hidden md:table lg:hidden w-full table-auto text-sm">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th onClick={() => handleSort("id")} className="px-2 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">ID<SortIcon col="id" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th onClick={() => handleSort("lastName")} className="px-2 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Nombre<SortIcon col="lastName" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th onClick={() => handleSort("email")} className="px-2 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Email<SortIcon col="email" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th onClick={() => handleSort("role")} className="px-2 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Rol<SortIcon col="role" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th onClick={() => handleSort("phone")} className="px-2 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Teléfono<SortIcon col="phone" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th onClick={() => handleSort("createdAt")} className="px-2 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap">Registro<SortIcon col="createdAt" sortCol={sortCol} sortDir={sortDir} /></th>
+              <th className="px-2 py-3 text-center font-semibold text-gray-700" style={{width: "90px"}}>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map(user => (
+              <tr key={user.id} className="border-t hover:bg-gray-50 transition">
+                <td className="px-2 py-3 text-xs font-mono text-gray-500">#{user.id}</td>
+                <td className="px-2 py-3 text-xs font-medium text-gray-900">{user.firstName} {user.lastName}</td>
+                <td className="px-2 py-3 text-xs text-gray-600">{user.email}</td>
+                <td className="px-2 py-3">
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"
+                  }`}>
+                    {user.role === "ADMIN" ? "Admin" : "Cliente"}
+                  </span>
+                </td>
+                <td className="px-2 py-3 text-xs text-gray-600">{user.phone || "—"}</td>
+                <td className="px-2 py-3 text-xs text-gray-500 whitespace-nowrap">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}</td>
+                <td className="px-2 py-3" style={{width: "90px"}}>
+                  <div className="flex flex-col gap-1">
+                    <button onClick={() => navigate(`/admin/usuarios/${user.id}/editar`)}
+                      className="text-xs px-2 py-1 border border-primary text-primary rounded hover:bg-primary hover:text-white transition text-center">
+                      Editar
+                    </button>
+                    <button onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)}
+                      className="text-xs px-2 py-1 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white transition text-center">
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {sorted.length === 0 && (
+              <tr><td colSpan="7" className="text-center py-10 text-gray-500">{hasFilters ? "No hay usuarios con los filtros aplicados." : "No hay usuarios registrados."}</td></tr>
+            )}
+          </tbody>
+        </table>
+
+        {/* ≥ 1024px: tabla completa original */}
+        <table className="hidden lg:table w-full table-auto text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>
               {[

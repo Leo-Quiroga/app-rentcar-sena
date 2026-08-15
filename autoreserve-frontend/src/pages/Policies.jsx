@@ -11,6 +11,31 @@ const DEFAULT_POLICIES = [
   { id: "d4", title: "Responsabilidad del usuario", sortOrder: 4, content: "El usuario es responsable del cuidado del vehículo durante el periodo de la reserva y deberá responder por cualquier daño ocasionado por un mal uso del mismo." },
 ];
 
+function DocCard({ title, description, file }) {
+  const url = `/docs/${encodeURIComponent(file)}`;
+  return (
+    <div className="flex flex-col justify-between border border-gray-200 rounded-lg p-4 bg-gray-50 hover:shadow-md transition">
+      <div className="flex items-start gap-3 mb-4">
+        <span className="text-3xl shrink-0">📄</span>
+        <div>
+          <p className="font-semibold text-gray-800 text-sm">{title}</p>
+          <p className="text-xs text-gray-500 mt-1 leading-relaxed">{description}</p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <a href={url} target="_blank" rel="noopener noreferrer"
+          className="flex-1 text-center text-xs px-3 py-1.5 bg-primary text-white rounded hover:bg-primary-dark transition">
+          👁️ Ver
+        </a>
+        <a href={url} download
+          className="flex-1 text-center text-xs px-3 py-1.5 border border-primary text-primary rounded hover:bg-primary hover:text-white transition">
+          ⬇️ Descargar
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function Policies() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -88,8 +113,8 @@ export default function Policies() {
       )}
 
       <header className="text-center">
-        <h1 className="text-3xl font-bold text-neutral-dark mb-4">📜 Políticas de AutoReserve</h1>
-        <p className="text-gray-600">Condiciones y políticas que aplican a todas las reservas realizadas en nuestra plataforma.</p>
+        <h1 className="text-3xl font-bold text-neutral-dark mb-4">📜 Políticas y Recursos</h1>
+        <p className="text-gray-600">Condiciones, políticas y documentos de referencia de la plataforma AutoReserve.</p>
         {isAdmin && (
           <p className="text-xs text-blue-600 mt-2 bg-blue-50 inline-block px-3 py-1 rounded-full">
             ✏️ Modo administrador — puedes crear, editar y eliminar secciones
@@ -191,6 +216,52 @@ export default function Policies() {
           </section>
         )
       )}
+
+      {/* Sección de recursos / documentos */}
+      <section className="border border-gray-100 rounded-lg p-6 bg-white shadow-sm">
+        <h2 className="text-xl font-semibold text-neutral-dark mb-1">📁 Recursos y Documentación</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          {isAdmin
+            ? "Documentos técnicos y de usuario disponibles para consulta y descarga."
+            : "Documentos de referencia para ayudarte a usar la plataforma."}
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          {/* Manual de usuario — visible para todos */}
+          <DocCard
+            title="Manual de Usuario"
+            description="Guía paso a paso para usar AutoReserve: cómo registrarte, buscar vehículos, hacer reservas, gestionar tu perfil y más."
+            file="Manual de usuario.pdf"
+          />
+
+          {/* Documentos técnicos — solo admin */}
+          {isAdmin && (
+            <>
+              <DocCard
+                title="Manual Técnico y De Operación"
+                description="Documentación técnica del sistema: arquitectura, configuración, despliegue y operación de la plataforma."
+                file="Manual Técnico Y De Operación Del Sistema.pdf"
+              />
+              <DocCard
+                title="Plan de Capacitación y Pruebas"
+                description="Plan de capacitación del equipo y protocolo de pruebas de aceptación del software."
+                file="Plan capacitación pruebas aceptación.pdf"
+              />
+              <DocCard
+                title="Plan de Mantenimiento y Soporte"
+                description="Estrategia de mantenimiento preventivo, correctivo y plan de soporte continuo del software."
+                file="Plan de Mantenimiento y Soporte del Software.pdf"
+              />
+              <DocCard
+                title="Plan de Migración y Respaldo"
+                description="Procedimientos de migración de datos, estrategia de respaldo y recuperación ante fallos."
+                file="Plan de Migración y Respaldo de Datos del Software.pdf"
+              />
+            </>
+          )}
+        </div>
+      </section>
 
       <footer className="text-sm text-gray-500 text-center">
         Estas políticas pueden actualizarse en cualquier momento. Te recomendamos revisarlas periódicamente.

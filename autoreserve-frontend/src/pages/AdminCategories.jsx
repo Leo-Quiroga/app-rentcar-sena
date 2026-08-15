@@ -89,14 +89,47 @@ export default function AdminCategories() {
         </Link>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-200 text-sm">
+      <div className="overflow-hidden">
+
+        {/* Tarjetas móvil (< 640px) */}
+        <div className="sm:hidden divide-y divide-gray-200 border border-gray-200 rounded-lg">
+          {categories.map((cat) => (
+            <div key={cat.id} className="p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-gray-900">{cat.name}</p>
+                  <p className="text-xs text-gray-400">ID: {cat.id}</p>
+                </div>
+                <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded shrink-0">
+                  {cat.carCount || 0} autos
+                </span>
+              </div>
+              <p className="text-xs text-gray-600">{cat.description || 'Sin descripción'}</p>
+              <div className="flex gap-2">
+                <Link to={`/admin/categorias/${cat.id}/editar`}
+                  className="text-xs px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                  Editar
+                </Link>
+                <button onClick={() => handleDelete(cat.id, cat.name)}
+                  className="text-xs px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+          {categories.length === 0 && (
+            <p className="text-center py-6 text-gray-500 italic">No hay categorías registradas</p>
+          )}
+        </div>
+
+        {/* Tabla desktop (≥ 640px) */}
+        <table className="hidden sm:table w-full border-collapse border border-gray-200 text-sm">
           <thead className="bg-gray-100">
             <tr>
               <th className="border border-gray-200 px-4 py-2 text-left">ID</th>
               <th className="border border-gray-200 px-4 py-2 text-left">Nombre</th>
               <th className="border border-gray-200 px-4 py-2 text-left">Descripción</th>
-              <th className="border border-gray-200 px-4 py-2 text-left">Autos</th>
+              <th className="border border-gray-200 px-4 py-2">Autos</th>
               <th className="border border-gray-200 px-4 py-2">Acciones</th>
             </tr>
           </thead>
@@ -105,9 +138,7 @@ export default function AdminCategories() {
               <tr key={cat.id} className="hover:bg-gray-50">
                 <td className="border border-gray-200 px-4 py-2">{cat.id}</td>
                 <td className="border border-gray-200 px-4 py-2 font-medium">{cat.name}</td>
-                <td className="border border-gray-200 px-4 py-2">
-                  {cat.description || 'Sin descripción'}
-                </td>
+                <td className="border border-gray-200 px-4 py-2">{cat.description || 'Sin descripción'}</td>
                 <td className="border border-gray-200 px-4 py-2 text-center">
                   <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
                     {cat.carCount || 0} autos
@@ -115,31 +146,21 @@ export default function AdminCategories() {
                 </td>
                 <td className="border border-gray-200 px-4 py-2 text-center">
                   <div className="flex justify-center gap-2">
-                    <Link
-                      to={`/admin/categorias/${cat.id}/editar`}
-                      className="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                    >
+                    <Link to={`/admin/categorias/${cat.id}/editar`}
+                      className="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
                       Editar
                     </Link>
-                    <button
-                      onClick={() => handleDelete(cat.id, cat.name)}
-                      className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-                    >
+                    <button onClick={() => handleDelete(cat.id, cat.name)}
+                      className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
                       Eliminar
                     </button>
                   </div>
                 </td>
               </tr>
             ))}
-
             {categories.length === 0 && (
               <tr>
-                <td
-                  colSpan="5"
-                  className="text-center py-6 text-gray-500 italic"
-                >
-                  No hay categorías registradas
-                </td>
+                <td colSpan="5" className="text-center py-6 text-gray-500 italic">No hay categorías registradas</td>
               </tr>
             )}
           </tbody>
